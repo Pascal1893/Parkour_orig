@@ -494,6 +494,66 @@ small{color:var(--muted)}
   .topbar{flex-direction:column; align-items:flex-start; gap:12px}
   .top-actions{width:100%; justify-content:space-between}
   .grid{grid-template-columns:1fr}
+  .canvas-wrap{padding: 0 8px 8px}
+  .hud{inset: 0 8px 8px 8px}
+}
+
+/* ── Touch Controls ──────────────────────────────────────────────────── */
+.touch-controls {
+  display: none;
+  position: absolute;
+  bottom: 22px;
+  left: 28px;
+  right: 28px;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 6;
+}
+.touch-device .touch-controls { display: flex; }
+.touch-device .touch-hint     { display: block !important; }
+
+.touch-btn {
+  pointer-events: all;
+  width: clamp(54px, 13vw, 76px);
+  height: clamp(54px, 13vw, 76px);
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.35);
+  background: rgba(16,14,28,.60);
+  color: rgba(255,255,255,.95);
+  font-weight: 900;
+  font-size: clamp(9px, 2.2vw, 12px);
+  letter-spacing: .6px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  backdrop-filter: blur(10px);
+  transition: transform .09s ease, background .09s ease, box-shadow .09s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.touch-btn.t-pressed {
+  transform: scale(.82);
+}
+.touch-btn-jump {
+  background: rgba(100,68,240,.62);
+  border-color: rgba(140,108,255,.85);
+  box-shadow: 0 0 26px rgba(124,92,255,.45);
+}
+.touch-btn-jump.t-pressed {
+  background: rgba(130,98,255,.80);
+  box-shadow: 0 0 38px rgba(124,92,255,.65);
+}
+.touch-btn-action {
+  background: rgba(30,185,130,.42);
+  border-color: rgba(62,242,177,.72);
+  box-shadow: 0 0 22px rgba(62,242,177,.32);
+}
+.touch-btn-action.t-pressed {
+  background: rgba(62,242,177,.60);
+  box-shadow: 0 0 36px rgba(62,242,177,.55);
 }
 
 /* ===== ADMIN PANEL ===== */

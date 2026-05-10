@@ -45,13 +45,18 @@
           <canvas id="game" width="980" height="520"></canvas>
           <div class="hud" id="hud">
             <div class="hud-inner">
-              <div class="hud-title">Drücke <span class="kbd">Space</span> zum Starten</div>
+              <div class="hud-title">Tippe oder drücke <span class="kbd">Space</span> zum Starten</div>
               <div class="hud-sub">
-                Steuerung: <span class="kbd">Space</span> Jump · <span class="kbd">Shift</span> Dash ·
+                Tastatur: <span class="kbd">Space</span> Jump · <span class="kbd">Shift</span> Dash ·
                 <span class="kbd">E</span> Slow-mo · <span class="kbd">R</span> Restart
               </div>
-              <div class="hud-sub">Tipp: Charaktere haben unterschiedliche Fähigkeiten.</div>
+              <div class="hud-sub touch-hint" style="display:none">Touch: <strong>JUMP</strong> (links unten) · <strong>ACT</strong> für Dash / Slow-mo (rechts)</div>
+              <div class="hud-sub">Jeder Charakter hat eine eigene Fähigkeit.</div>
             </div>
+          </div>
+          <div id="touch-controls" class="touch-controls">
+            <button id="touch-jump" class="touch-btn touch-btn-jump">JUMP</button>
+            <button id="touch-action" class="touch-btn touch-btn-action" style="opacity:.38;pointer-events:none">ACT</button>
           </div>
         </div>
 

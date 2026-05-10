@@ -84,6 +84,7 @@ async function refreshMe() {
     activeCharacter = characters.find((c) => c.id === me.selected_character) || characters[0];
     const acEl = $("#active-character");
     if (acEl) acEl.textContent = activeCharacter.name;
+    updateTouchActionLabel();
   }
   if (me?.is_admin) {
     const lbl = $("#admin-username-label");
@@ -201,6 +202,7 @@ function renderCharacters() {
           me.selected_character = cid;
           activeCharacter = characters.find((c) => c.id === cid) || characters[0];
           $("#active-character").textContent = activeCharacter.name;
+          updateTouchActionLabel();
           await api("/api/select_character", { method: "POST", body: JSON.stringify({ character_id: cid }) });
           await refreshMe();
           renderCharacters();
@@ -1426,6 +1428,61 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => keys.delete(e.code));
 
+// ── Touch Controls ─────────────────────────────────────────────────────────
+if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
+  document.body.classList.add("touch-device");
+}
+
+function setupTouchControls() {
+  const jumpBtn = document.getElementById("touch-jump");
+  const actionBtn = document.getElementById("touch-action");
+  if (!jumpBtn || !actionBtn) return;
+
+  function bindBtn(btn, codes) {
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      codes.forEach((c) => keys.add(c));
+      if (codes.includes("Space")) gameStartOrJump();
+      btn.classList.add("t-pressed");
+    }, { passive: false });
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      codes.forEach((c) => keys.delete(c));
+      btn.classList.remove("t-pressed");
+    }, { passive: false });
+    btn.addEventListener("touchcancel", () => {
+      codes.forEach((c) => keys.delete(c));
+      btn.classList.remove("t-pressed");
+    });
+  }
+
+  bindBtn(jumpBtn, ["Space"]);
+  bindBtn(actionBtn, ["ShiftLeft", "KeyE"]); // dash + slowmo
+}
+
+function updateTouchActionLabel() {
+  const btn = document.getElementById("touch-action");
+  if (!btn) return;
+  const id = activeCharacter?.id ?? 0;
+  const labels = { 4: "DASH", 9: "SLOW" };
+  const hasAction = labels[id] != null;
+  btn.textContent = labels[id] || "ACT";
+  btn.style.opacity = hasAction ? "1" : "0.38";
+  btn.style.pointerEvents = hasAction ? "all" : "none";
+}
+
+// Canvas tap to start/jump on mobile
+document.addEventListener("DOMContentLoaded", () => {
+  setupTouchControls();
+  const cv = document.getElementById("game");
+  if (cv) {
+    cv.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      gameStartOrJump();
+    }, { passive: false });
+  }
+});
+
 function charParams(ch) {
   const base = {
     speed: 5.2,
@@ -1435,37 +1492,47 @@ function charParams(ch) {
     dash: false,
     magnet: false,
     shield: false,
+    shieldBase: 1,
     glide: false,
     wallJump: false,
     slowmo: false,
+    coyoteTime: 0,
   };
   switch (ch?.id ?? 0) {
-    case 1:
-      base.speed = 8.0;
-      base.airControl = 0.55;
+    case 0: // Runner — balanced, nimble, best air control
+      base.speed = 5.7;
+      base.airControl = 0.90;
       break;
-    case 2:
+    case 1: // Sprinter — blistering speed
+      base.speed = 9.5;
+      base.airControl = 0.58;
+      break;
+    case 2: // Hopper — huge jump + coyote time (jump window after leaving edge)
       base.jump = 14.5;
+      base.coyoteTime = 0.14;
       break;
-    case 3:
+    case 3: // Doubler — full-height double jump
       base.doubleJump = true;
       break;
-    case 4:
+    case 4: // Dasher — fast dash, short cooldown, brief invincibility
       base.dash = true;
       break;
-    case 5:
+    case 5: // Magnet — wide coin pull + slight speed buff
       base.magnet = true;
+      base.speed = 5.7;
       break;
-    case 6:
+    case 6: // Guardian — 3 shield charges, long invincibility after hit
       base.shield = true;
+      base.shieldBase = 3;
       break;
-    case 7:
+    case 7: // Glider — floaty low gravity while holding jump in air
       base.glide = true;
+      base.jump = 10.5;
       break;
-    case 8:
+    case 8: // Wallie — strong wall jump, quick re-wall cooldown
       base.wallJump = true;
       break;
-    case 9:
+    case 9: // Chrono — extreme slow-mo, long duration, short cooldown
       base.slowmo = true;
       break;
   }
@@ -1707,7 +1774,7 @@ function restart() {
     dashReady: true,
     dashUntil: 0,
     shieldReady: p.shield ? true : false,
-    shieldCharges: (p.shield ? 1 : 0) + (p._mods?.shield_charges_add || 0),
+    shieldCharges: (p.shield ? (p.shieldBase || 1) : 0) + (p._mods?.shield_charges_add || 0),
     invUntil: 0,
     lastWall: 0,
     crouch: false,
@@ -1907,14 +1974,16 @@ function gameStartOrJump() {
 function doJump() {
   const p = game.player;
   const prm = charParams(activeCharacter);
-  if (p.onGround) {
+  const coyote = prm.coyoteTime > 0 && !p.onGround && (game.t - (p.lastOnGround || 0)) < prm.coyoteTime && p.jumpsLeft === 0;
+  if (p.onGround || coyote) {
     p.vy = -prm.jump;
     p.onGround = false;
     p.jumpsLeft = prm.doubleJump ? 1 : 0;
+    if (coyote) p.lastOnGround = -99; // consume coyote window
     return;
   }
   if (prm.doubleJump && p.jumpsLeft > 0) {
-    p.vy = -prm.jump * 0.9;
+    p.vy = -prm.jump; // full-height second jump
     p.jumpsLeft -= 1;
   }
 }
@@ -1936,8 +2005,9 @@ function tryDash(dt) {
   if (!keys.has("ShiftLeft") && !keys.has("ShiftRight") && !keys.has("KeyD") && !keys.has("ArrowRight")) return;
   if (!p.dashReady) return;
   p.dashReady = false;
-  p.dashUntil = game.t + 0.32;
-  const cd = 900 * (prm._mods?.dash_cd_mul || 1);
+  p.dashUntil = game.t + 0.36;
+  p.invUntil = Math.max(p.invUntil, game.t + 0.36); // invincible during dash
+  const cd = 650 * (prm._mods?.dash_cd_mul || 1);
   setTimeout(() => (p.dashReady = true), cd);
 }
 
@@ -1946,8 +2016,8 @@ function trySlowmo() {
   if (!prm.slowmo) return;
   if (!keys.has("KeyE")) return;
   if (game.t < game.slowCooldownUntil) return;
-  game.slowUntil = game.t + 1.8 + (prm._mods?.slow_dur_add || 0);
-  game.slowCooldownUntil = game.t + 4.5 * (prm._mods?.slow_cd_mul || 1);
+  game.slowUntil = game.t + 2.5 + (prm._mods?.slow_dur_add || 0);
+  game.slowCooldownUntil = game.t + 3.5 * (prm._mods?.slow_cd_mul || 1);
 }
 
 function physics(dt) {
@@ -1957,12 +2027,12 @@ function physics(dt) {
 
   // slowmo
   trySlowmo();
-  const slow = game.t < game.slowUntil ? 0.25 : 1.0;
+  const slow = game.t < game.slowUntil ? 0.18 : 1.0;
   dt *= slow;
 
   // dash
   tryDash(dt);
-  const dash = game.t < p.dashUntil ? 2.6 : 1.0;
+  const dash = game.t < p.dashUntil ? 2.8 : 1.0;
 
   // base forward (+ booster)
   const boostMul = (p.boosterUntil && p.boosterUntil > game.t) ? 1.48 : 1.0;
@@ -1971,7 +2041,7 @@ function physics(dt) {
   // gravity & glide
   const holdingJump = keys.has("Space") || keys.has("KeyW") || keys.has("ArrowUp");
   const cancelJump = keys.has("ArrowDown") || keys.has("KeyS");
-  const glideG = 16.0 * (prm._mods?.glide_grav_mul || 1);
+  const glideG = 7.5 * (prm._mods?.glide_grav_mul || 1);
   const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 32.0;
 
   // Jump cancel / short hop: releasing jump early cuts upward velocity
@@ -2009,6 +2079,7 @@ function physics(dt) {
         p.y = top - p.h;
         p.vy = 0;
         p.onGround = true;
+        p.lastOnGround = game.t;
       }
     }
   }
@@ -2058,7 +2129,7 @@ function physics(dt) {
 
   // coin magnet
   const baseMag = 60;
-  const magnetR = (prm.magnet ? 115 : baseMag) * (prm._mods?.magnet_mul || 1);
+  const magnetR = (prm.magnet ? 165 : baseMag) * (prm._mods?.magnet_mul || 1);
   for (const c of game.coinsFx) {
     if (c.taken) continue;
     const px = p.x + p.w / 2;
@@ -2089,7 +2160,7 @@ function physics(dt) {
       const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
       if (Math.hypot(scx - pcx, scy - pcy) < sr + 9) {
         if (p.invUntil > game.t) continue;
-        if (prm.shield && p.shieldCharges > 0) { p.shieldCharges -= 1; p.invUntil = game.t + 0.9; break; }
+        if (prm.shield && p.shieldCharges > 0) { p.shieldCharges -= 1; p.invUntil = game.t + 2.0; break; }
         gameOver(); break;
       }
       continue;
@@ -2134,14 +2205,14 @@ function physics(dt) {
         const touchR = Math.abs(p.x + p.w - o.x) < 18;
         const touchL = Math.abs(p.x - (o.x + o.w)) < 18;
         if (!p.onGround && (touchR || touchL)) {
-          if (keys.has("Space") && game.t - p.lastWall > 0.25) {
-            p.vy = -prm.jump * 0.98; p.lastWall = game.t;
+          if (keys.has("Space") && game.t - p.lastWall > 0.18) {
+            p.vy = -prm.jump * 1.1; p.lastWall = game.t;
           }
         }
       } else {
         if (o.type === "spike" || o.type === "hurdle") { /* top-safe handled above */ }
         if (p.invUntil > game.t) continue;
-        if (prm.shield && p.shieldCharges > 0) { p.shieldCharges -= 1; p.invUntil = game.t + 0.9; break; }
+        if (prm.shield && p.shieldCharges > 0) { p.shieldCharges -= 1; p.invUntil = game.t + 2.0; break; }
         gameOver(); break;
       }
     }
