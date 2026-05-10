@@ -813,18 +813,39 @@ function drawDropCharacterCanvas(canvas, nd) {
   const style = playerStyle(cid, skinKey);
   const glowCols = ["124,92,255","255,210,77","62,242,177","180,120,255","255,77,109","255,220,120","190,210,255","0,210,255","124,92,255","62,242,177"];
   const gc = glowCols[Math.min(cid, glowCols.length - 1)];
-  const bg = ctx.createRadialGradient(W / 2, H * 0.52, 0, W / 2, H * 0.52, W * 0.9);
-  bg.addColorStop(0, `rgba(${gc},.30)`);
+  const bg = ctx.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.48, W * 0.9);
+  bg.addColorStop(0, `rgba(${gc},.34)`);
   bg.addColorStop(1, `rgba(${gc},0)`);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
+
+  // Determine the full logical bounding box including accessories
+  // p = {x:0,y:0,w:34,h:54}; head center at (17,10)
+  const headTop = 10 - (style.headR + 1);
+  let topY = headTop;
+  if (style.animalEars === "rabbit")    topY = Math.min(topY, -30); // ears: ellipse cy=-14, ry=16
+  else if (style.animalEars === "wolf") topY = Math.min(topY, -8);  // wolf ear peaks at hcy-18=-8
+  else if (style.animalEars === "fox")  topY = Math.min(topY, -5);  // fox ear peaks at hcy-15=-5
+  else if (style.animalEars === "kangaroo") topY = Math.min(topY, -22);
+  else if (style.animalEars === "monkey")   topY = Math.min(topY, headTop - 4);
+  if (style.hat === "crown")  topY = Math.min(topY, headTop - 8);
+  if (style.hat === "santa")  topY = Math.min(topY, headTop - 10);
+  if (style.antennae)         topY = Math.min(topY, headTop - 16);
+
+  const charLogH = 54 - topY;
+  const charLogW = 34;
+  const padding = 10;
+  const sc = Math.min((W - padding) / charLogW, (H - padding) / charLogH);
+
+  const tx = (W - charLogW * sc) / 2;
+  const ty = padding / 2 - topY * sc;
+
+  const shadowY = Math.min(ty + 54 * sc + 6, H - 4);
   ctx.fillStyle = "rgba(0,0,0,.28)";
   ctx.beginPath();
-  ctx.ellipse(W / 2, H - 16, 38, 9, 0, 0, Math.PI * 2);
+  ctx.ellipse(tx + 17 * sc, shadowY, 16 * sc, 5, 0, 0, Math.PI * 2);
   ctx.fill();
-  const sc = Math.min(W / 42, H / 66);
-  const tx = (W - 34 * sc) / 2;
-  const ty = (H - 54 * sc) / 2 - 8;
+
   ctx.save();
   ctx.translate(tx, ty);
   ctx.scale(sc, sc);
@@ -987,7 +1008,7 @@ async function animateBoxOpen(drop, box) {
     if (isFinal) {
       el.innerHTML = `<div class="tag">${escapeHtml(isChar ? "Charakter" : it.type)} · ${escapeHtml(it.rarity)}</div><div class="t">${escapeHtml(it.name)}</div><div class="d">${escapeHtml(it.desc || "")}</div>`;
     } else {
-      el.innerHTML = `<div class="tag" style="opacity:.6">??? · ${escapeHtml(it.rarity)}</div><div class="t" style="filter:blur(7px);user-select:none;opacity:.7">████████</div><div class="d" style="filter:blur(4px);opacity:.35">•••••</div>`;
+      el.innerHTML = `<div class="tag" style="opacity:.45">??? · ???</div><div class="t" style="opacity:.55;letter-spacing:2px">?</div><div class="d" style="opacity:.28">• • •</div>`;
     }
     roll.appendChild(el);
   });
@@ -1032,16 +1053,20 @@ async function animateBoxOpen(drop, box) {
   const rc = { Bronze: "#b47830", Silber: "#8aaab8", Gold: "#c8a020", Platin: "#40c8e8", Mythic: "#d040d0" };
   const rarC = rc[normalizedDrop.rarity] || "#888";
   if (kind === "character") renderCharacters();
-  resultEl.style.cssText = "width:100%;max-width:420px;margin:0 auto";
+  const rarRgb = { Bronze: "180,120,48", Silber: "138,170,184", Gold: "200,160,32", Platin: "64,200,232", Mythic: "208,64,208" };
+  const rrb = rarRgb[normalizedDrop.rarity] || "140,140,160";
+  const cvW = kind === "character" ? 150 : 140;
+  const cvH = kind === "character" ? 190 : 140;
+  resultEl.style.cssText = "width:100%;max-width:380px;margin:0 auto";
   resultEl.innerHTML = `
-    <div style="background:rgba(20,20,28,.95);border:2px solid ${rarC};border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;animation:drop-reveal .35s ease both;box-shadow:0 0 24px ${rarC}55">
-      <canvas id="drop-vis" width="${kind === "character" ? 72 : 72}" height="${kind === "character" ? 88 : 72}" style="border-radius:10px;background:rgba(0,0,0,.22);flex-shrink:0"></canvas>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:${rarC};margin-bottom:4px">${escapeHtml(normalizedDrop.rarity).toUpperCase()} · ${escapeHtml(kind === "character" ? "CHARAKTER" : (normalizedDrop.type || "ITEM").toUpperCase())}</div>
-        <div style="font-size:18px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(normalizedDrop.name)}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:4px;line-height:1.4">${escapeHtml(normalizedDrop.desc || "")}</div>
-        ${kind === "character" ? `<div style="display:inline-block;margin-top:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(80,210,120,.18);color:#50d278;border:1px solid #50d27855">UNLOCKED</div>` : ""}
+    <div style="background:rgba(20,20,28,.97);border:2px solid ${rarC};border-radius:18px;padding:22px 20px 18px;text-align:center;animation:drop-reveal .35s ease both;box-shadow:0 0 38px ${rarC}55">
+      <div style="font-size:23px;font-weight:900;color:#fff;margin-bottom:7px;line-height:1.2;letter-spacing:.3px">${escapeHtml(normalizedDrop.name)}</div>
+      <div style="display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.5px;color:${rarC};background:rgba(${rrb},.15);border:1px solid ${rarC}55;border-radius:20px;padding:3px 12px;margin-bottom:16px">${escapeHtml(normalizedDrop.rarity).toUpperCase()} · ${escapeHtml(kind === "character" ? "CHARAKTER" : (normalizedDrop.type || "ITEM").toUpperCase())}</div>
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <canvas id="drop-vis" width="${cvW}" height="${cvH}" style="border-radius:12px;background:rgba(0,0,0,.22)"></canvas>
       </div>
+      <div style="font-size:13px;color:rgba(255,255,255,.58);line-height:1.5">${escapeHtml(normalizedDrop.desc || "")}</div>
+      ${kind === "character" ? `<div style="display:inline-block;margin-top:10px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:rgba(80,210,120,.18);color:#50d278;border:1px solid #50d27855">UNLOCKED</div>` : ""}
     </div>`;
   if (kind === "character") {
     try { drawDropCharacterCanvas(resultEl.querySelector("#drop-vis"), normalizedDrop); } catch (_) {}
