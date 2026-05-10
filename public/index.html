@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Parkour 1893</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb1"></div>
+    <div class="bg-orb orb2"></div>
+    <div class="bg-orb orb3"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <div class="brand-title">Parkour</div>
+          <div class="brand-sub">Port 1893</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="pill" id="pill-user">Nicht eingeloggt</div>
+        <button class="btn ghost" id="btn-profile">Profil</button>
+        <button class="btn ghost" id="btn-shop">Shop</button>
+        <button class="btn ghost" id="btn-auth">Login</button>
+        <button class="btn ghost" id="btn-logout" style="display: none">Logout</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="card game-card">
+        <div class="card-head">
+          <div class="card-title">Run</div>
+          <div class="card-meta">
+            <span class="stat">Score: <span id="stat-score">0</span></span>
+            <span class="stat">Coins: <span id="stat-coins">0</span></span>
+            <span class="stat">Gems: <span id="stat-gems">0</span></span>
+            <span class="stat">Best: <span id="stat-best">0</span></span>
+            <span class="stat muted" id="stat-sync"></span>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="game" width="980" height="520"></canvas>
+          <div class="hud" id="hud">
+            <div class="hud-inner">
+              <div class="hud-title">Drücke <span class="kbd">Space</span> zum Starten</div>
+              <div class="hud-sub">
+                Steuerung: <span class="kbd">Space</span> Jump · <span class="kbd">Shift</span> Dash ·
+                <span class="kbd">E</span> Slow-mo · <span class="kbd">R</span> Restart
+              </div>
+              <div class="hud-sub">Tipp: Charaktere haben unterschiedliche Fähigkeiten.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-foot">
+          <div class="hint">
+            Aktiver Charakter: <span class="mono" id="active-character">Runner</span>
+          </div>
+          <div class="actions">
+            <button class="btn" id="btn-restart">Restart</button>
+            <button class="btn ghost" id="btn-open-characters">Charaktere</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card side-card">
+        <div class="card-head">
+          <div class="card-title">Global Highscore</div>
+          <div class="card-meta"><span class="muted">Top 20</span></div>
+        </div>
+        <div class="leaderboard" id="leaderboard"></div>
+        <div class="card-foot split">
+          <div class="muted">Wird live aus der Datenbank geladen.</div>
+          <button class="btn ghost" id="btn-refresh">Refresh</button>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal" id="modal-auth" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="modal-title">Account</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✕</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Login</button>
+          <button class="tab" data-tab="register">Registrieren</button>
+        </div>
+        <div class="modal-body">
+          <form id="form-login" class="form">
+            <label class="field">
+              <span>Username</span>
+              <input name="username" autocomplete="username" required minlength="3" maxlength="20" />
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input name="password" type="password" autocomplete="current-password" required minlength="6" />
+            </label>
+            <button class="btn" type="submit">Login</button>
+            <div class="form-msg" id="msg-login"></div>
+          </form>
+
+          <form id="form-register" class="form hidden">
+            <label class="field">
+              <span>Username</span>
+              <input name="username" autocomplete="username" required minlength="3" maxlength="20" />
+              <small>Nur Buchstaben/Zahlen und optional <span class="mono">_</span></small>
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input name="password" type="password" autocomplete="new-password" required minlength="6" />
+            </label>
+            <button class="btn" type="submit">Account erstellen</button>
+            <div class="form-msg" id="msg-register"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-characters" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card wide">
+        <div class="modal-head">
+          <div class="modal-title">Charaktere</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="char-top">
+            <div class="muted">
+              Münzen: <span class="mono" id="wallet-coins">0</span>
+            </div>
+            <div class="muted">Unlocks gelten global für deinen Account.</div>
+          </div>
+          <div class="grid" id="characters-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-shop" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card wide">
+        <div class="modal-head">
+          <div class="modal-title">Shop · Lootboxen</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="shop-top">
+            <div class="muted">Münzen: <span class="mono" id="shop-coins">0</span></div>
+            <div class="muted">Seltenheiten: Bronze · Silber · Gold · Platin · Mythic</div>
+          </div>
+          <div class="tabs" id="shop-tabs">
+            <button class="tab active" data-shop-tab="boxes">Boxen</button>
+            <button class="tab" data-shop-tab="collection">Sammlung</button>
+            <button class="tab" data-shop-tab="inventory">Inventar</button>
+            <button class="tab" data-shop-tab="gifts">Geschenke</button>
+          </div>
+          <div id="shop-view-boxes">
+          <div class="grid" id="shop-boxes"></div>
+          <div class="drop" id="shop-drop" style="display:none"></div>
+          </div>
+          <div id="shop-view-collection" class="hidden">
+            <div class="muted" style="margin:8px 0 12px">Alle Items (Katalog) + deine Mengen.</div>
+            <div class="seg" id="collection-filter" style="margin:0 0 10px">
+              <button class="seg-btn active" data-filter="all">Alles</button>
+              <button class="seg-btn" data-filter="skins">Skins</button>
+              <button class="seg-btn" data-filter="characters">Charaktere</button>
+            </div>
+            <div class="grid" id="collection-grid"></div>
+          </div>
+          <div id="shop-view-inventory" class="hidden">
+            <div class="muted" style="margin:8px 0 12px">Dein Inventar (nur Drops).</div>
+            <div class="grid" id="shop-inventory-grid"></div>
+          </div>
+          <div id="shop-view-gifts" class="hidden">
+            <div class="muted" style="margin:8px 0 12px">Geschenke vom Admin.</div>
+            <div class="grid" id="shop-gifts-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-preview" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="modal-title" id="preview-title">Vorschau</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="preview-wrap">
+            <canvas id="preview-canvas" width="420" height="240"></canvas>
+            <div class="preview-controls">
+              <div class="muted">Skin</div>
+              <select id="preview-skin"></select>
+              <button class="btn" id="preview-equip" disabled>Skin ausrüsten</button>
+              <div class="muted" id="preview-meta" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-difficulty" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="modal-title">Schwierigkeit wählen</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="muted" style="margin-bottom:10px">Easy ist ohne Double Jump machbar. Hard ist für Skills gedacht.</div>
+          <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <button class="btn ghost" data-diff="easy">Easy</button>
+            <button class="btn" data-diff="normal">Normal</button>
+            <button class="btn ghost" data-diff="hard">Hard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="modal" id="modal-inventory" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card wide">
+        <div class="modal-head">
+          <div class="modal-title" id="inv-title">Inventar</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="inv-top">
+            <div class="muted">Tipp: Gear kann pro Charakter ausgerüstet werden.</div>
+            <div class="muted">Münzen: <span class="mono" id="inv-coins">0</span></div>
+          </div>
+          <div class="grid" id="inventory-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-profile" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card wide">
+        <div class="modal-head">
+          <div class="modal-title">Profil</div>
+          <button class="icon-btn" data-close="1" aria-label="Schliessen">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="profile-wrap">
+            <div class="profile-card" id="profile-preview">
+              <div class="profile-frame" id="profile-frame"></div>
+              <div class="profile-inner">
+                <div class="profile-name" id="profile-name">Gast</div>
+                <div class="profile-title" id="profile-title">—</div>
+                <div class="profile-meta muted">Best Score: <span class="mono" id="profile-best">0</span></div>
+              </div>
+            </div>
+            <div class="profile-controls">
+              <div class="muted">Kosmetik aus Lootboxen auswählen:</div>
+              <div class="grid" id="profile-cosmetics"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL (shown only for admins) -->
+    <div id="admin-panel" class="admin-panel" style="display:none">
+      <div class="admin-header">
+        <div class="admin-brand">
+          <div class="admin-logo">A</div>
+          <div>
+            <div class="admin-title">ADMIN PANEL</div>
+            <div class="admin-sub" id="admin-username-label">admin-pwo</div>
+          </div>
+        </div>
+        <button class="btn admin-btn-danger" id="btn-admin-logout">Logout</button>
+      </div>
+
+      <div class="admin-body">
+        <div class="admin-cols">
+          <!-- Left: User list -->
+          <div class="admin-section">
+            <div class="admin-section-head">
+              <div class="admin-section-title">Benutzer</div>
+              <button class="btn ghost admin-btn-sm" id="btn-admin-refresh">Aktualisieren</button>
+            </div>
+            <div id="admin-users-list" class="admin-users-list"></div>
+          </div>
+
+          <!-- Right: Action panel -->
+          <div class="admin-section" id="admin-action-panel" style="display:none">
+            <div class="admin-section-title" id="admin-action-title">Aktionen</div>
+
+            <!-- Ban/Unban -->
+            <div class="admin-action-block">
+              <div class="admin-action-label">Sperren / Entsperren</div>
+              <div class="admin-row">
+                <button class="btn admin-btn-danger admin-btn-sm" id="btn-admin-ban">Sperren</button>
+                <button class="btn ghost admin-btn-sm" id="btn-admin-unban">Entsperren</button>
+              </div>
+            </div>
+
+            <!-- Reset Password -->
+            <div class="admin-action-block">
+              <div class="admin-action-label">Passwort zurücksetzen</div>
+              <div class="admin-row" style="gap:8px">
+                <input id="admin-new-pw" class="admin-input" type="text" placeholder="Neues Passwort (min. 6)" />
+                <button class="btn admin-btn-sm" id="btn-admin-reset-pw">Setzen</button>
+              </div>
+              <div id="admin-pw-msg" class="admin-msg"></div>
+            </div>
+
+            <!-- Gift Coins/Gems -->
+            <div class="admin-action-block">
+              <div class="admin-action-label">Coins / Gems schenken</div>
+              <div class="admin-row" style="gap:8px">
+                <select id="admin-gift-type" class="admin-input" style="width:90px">
+                  <option value="coins">Coins</option>
+                  <option value="gems">Gems</option>
+                </select>
+                <input id="admin-gift-amount" class="admin-input" type="number" min="1" placeholder="Menge" style="width:90px" />
+                <input id="admin-gift-note" class="admin-input" type="text" placeholder="Notiz (optional)" style="flex:1" />
+                <button class="btn admin-btn-sm" id="btn-admin-gift-currency">Senden</button>
+              </div>
+              <div id="admin-gift-currency-msg" class="admin-msg"></div>
+            </div>
+
+            <!-- Gift Box -->
+            <div class="admin-action-block">
+              <div class="admin-action-label">Box schenken</div>
+              <div class="admin-row" style="gap:8px">
+                <select id="admin-gift-box-id" class="admin-input" style="flex:1">
+                  <option value="bronze_box">Bronze Box</option>
+                  <option value="silber_box">Silber Box</option>
+                  <option value="gold_box">Gold Box</option>
+                </select>
+                <input id="admin-gift-box-note" class="admin-input" type="text" placeholder="Notiz (optional)" style="flex:1" />
+                <button class="btn admin-btn-sm" id="btn-admin-gift-box">Box senden</button>
+              </div>
+              <div id="admin-gift-box-msg" class="admin-msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-global-msg" class="admin-msg" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- Gifts tab in shop - added via JS -->
+
+    <script src="/app.js"></script>
+  </body>
+</html>
