@@ -2057,24 +2057,26 @@ function physics(dt) {
   const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 32.0;
 
   // Jump cancel / short hop: releasing jump early cuts upward velocity
+  // Math.pow normalizes the per-frame damping to be frame-rate independent
   if (!holdingJump && p.vy < -2.0) {
-    p.vy *= 0.55;
+    p.vy *= Math.pow(0.55, dt * 60);
   }
   // Fast-fall: ArrowDown/S cuts upward velocity, then falls faster
   if (cancelJump && p.vy < -2.0) {
-    p.vy *= 0.35;
+    p.vy *= Math.pow(0.35, dt * 60);
   }
   p.vy += g * dt;
   if (cancelJump && p.vy > 0) {
-    // slightly faster descent when holding down
     p.vy += 26.0 * dt;
   }
-  p.y += p.vy;
+  // Normalize position update to 60fps reference so jump height is
+  // identical at 30fps, 60fps, 120fps, 144fps, etc.
+  p.y += p.vy * dt * 60;
 
   // update moving platforms
   for (const plat of game.platforms) {
     if (plat.moving) {
-      plat.y += plat.mvy;
+      plat.y += plat.mvy * dt * 60;
       if (plat.y <= plat.yMin) { plat.y = plat.yMin; plat.mvy = Math.abs(plat.mvy); }
       else if (plat.y >= plat.yMax) { plat.y = plat.yMax; plat.mvy = -Math.abs(plat.mvy); }
     }
