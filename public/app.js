@@ -3243,6 +3243,48 @@ function loop(now) {
   const btnAdminRefresh = $("#btn-admin-refresh");
   if (btnAdminRefresh) btnAdminRefresh.addEventListener("click", loadAdminUsers);
 
+  // ── Vollbild ──────────────────────────────────────────────────────────
+  const canvasWrap = document.getElementById("canvas-wrap");
+  const btnFs = document.getElementById("btn-fullscreen");
+  const fsIconEnter = document.getElementById("fs-icon-enter");
+  const fsIconExit  = document.getElementById("fs-icon-exit");
+
+  function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  function updateFsButton() {
+    const fs = isFullscreen();
+    if (fsIconEnter) fsIconEnter.style.display = fs ? "none" : "";
+    if (fsIconExit)  fsIconExit.style.display  = fs ? ""     : "none";
+  }
+
+  if (btnFs && canvasWrap) {
+    btnFs.addEventListener("click", async () => {
+      if (!isFullscreen()) {
+        try {
+          await (canvasWrap.requestFullscreen?.() ?? canvasWrap.webkitRequestFullscreen?.());
+        } catch (_) {}
+      } else {
+        try {
+          await (document.exitFullscreen?.() ?? document.webkitExitFullscreen?.());
+        } catch (_) {}
+      }
+    });
+  }
+
+  function onFullscreenChange() {
+    updateFsButton();
+    if (isFullscreen()) {
+      // Querformat auf Mobilgeräten sperren
+      screen.orientation?.lock?.("landscape").catch(() => {});
+    } else {
+      screen.orientation?.unlock?.();
+    }
+  }
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
   restart();
   requestAnimationFrame(loop);
 })().catch((e) => {
