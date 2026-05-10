@@ -242,48 +242,96 @@ function displayCostLabel(cost, currency) {
 
 function boxSVG(b) {
   const nm = (b?.name || "").toLowerCase();
-  let cf, cs, ct, cg, cl;
+  let f0, f1, s0, s1, t0, t1, acc, glr, sym;
   if (nm.includes("gold")) {
-    cf = "#c49000"; cs = "#8a6200"; ct = "#e8b420"; cg = "#ffe878"; cl = "#a87800";
+    f0="#cc8800"; f1="#3a1a00"; s0="#aa6600"; s1="#2a1000";
+    t0="#ffe066"; t1="#cc8800"; acc="#ffd040"; glr="255,202,30"; sym="伝";
   } else if (nm.includes("silber")) {
-    cf = "#788898"; cs = "#4e5e6a"; ct = "#a0b4c4"; cg = "#dceaf6"; cl = "#5e7080";
+    f0="#607898"; f1="#1e2840"; s0="#485870"; s1="#182040";
+    t0="#90a8c8"; t1="#506080"; acc="#a0c0e0"; glr="160,200,240"; sym="銀";
   } else {
-    cf = "#a46438"; cs = "#6e3e14"; ct = "#c87e4a"; cg = "#eaaa72"; cl = "#824a1e";
+    f0="#a05028"; f1="#401800"; s0="#7a3818"; s1="#2c1200";
+    t0="#d07040"; t1="#804020"; acc="#d89060"; glr="210,125,55"; sym="力";
   }
-  /* 3D box: front face (6,22)-(55,72), right side (55,22)-(73,10)-(73,60)-(55,72), lid (6,22)-(55,22)-(73,10)-(24,10) */
+  const id = b.id;
   return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:100%">
     <defs>
-      <linearGradient id="bf${b.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${ct}"/><stop offset="100%" stop-color="${cf}"/></linearGradient>
+      <linearGradient id="bfr${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${f0}"/><stop offset="100%" stop-color="${f1}"/>
+      </linearGradient>
+      <linearGradient id="btp${id}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${t0}"/><stop offset="100%" stop-color="${t1}"/>
+      </linearGradient>
+      <radialGradient id="bgl${id}" cx="50%" cy="55%" r="50%">
+        <stop offset="0%" stop-color="rgb(${glr})" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="rgb(${glr})" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="borb${id}" cx="50%" cy="40%" r="55%">
+        <stop offset="0%" stop-color="#fffff0"/>
+        <stop offset="55%" stop-color="rgb(${glr})"/>
+        <stop offset="100%" stop-color="rgb(${glr})" stop-opacity="0"/>
+      </radialGradient>
     </defs>
-    <!-- shadow -->
-    <ellipse cx="38" cy="77" rx="24" ry="5" fill="rgba(0,0,0,0.32)"/>
+    <rect width="80" height="80" fill="#0d0d1a"/>
+    <ellipse cx="36" cy="46" rx="36" ry="32" fill="url(#bgl${id})"/>
+    <ellipse cx="34" cy="74" rx="22" ry="5" fill="rgb(${glr})" opacity="0.15"/>
+    <!-- particles -->
+    <circle cx="12" cy="32" r="1.5" fill="${acc}" opacity="0.70"/>
+    <circle cx="8"  cy="47" r="1"   fill="${acc}" opacity="0.45"/>
+    <circle cx="63" cy="30" r="1.5" fill="${acc}" opacity="0.65"/>
+    <circle cx="67" cy="46" r="1"   fill="${acc}" opacity="0.40"/>
+    <circle cx="38" cy="7"  r="1.2" fill="${acc}" opacity="0.50"/>
+    <ellipse cx="34" cy="52" rx="32" ry="9" fill="none" stroke="rgb(${glr})" stroke-width="1" opacity="0.18"/>
     <!-- right side face -->
-    <polygon points="55,22 73,10 73,60 55,72" fill="${cs}"/>
-    <!-- right edge highlight -->
-    <line x1="73" y1="10" x2="73" y2="60" stroke="${cg}" stroke-width="1.2" opacity="0.22"/>
-    <!-- front face (gradient) -->
-    <rect x="6" y="22" width="49" height="50" rx="2" fill="url(#bf${b.id})"/>
-    <!-- front top edge highlight -->
-    <rect x="6" y="22" width="49" height="5" rx="2" fill="${cg}" opacity="0.14"/>
-    <!-- strap horizontal -->
-    <rect x="6" y="38" width="49" height="9" fill="${cl}" opacity="0.75"/>
-    <!-- strap on side -->
-    <polygon points="55,38 73,26 73,35 55,47" fill="${cl}" opacity="0.65"/>
-    <!-- clasp background (centered on front face: x=6+49/2-10=20.5≈21) -->
-    <rect x="21" y="32" width="20" height="17" rx="4" fill="${cl}"/>
-    <!-- clasp recess -->
-    <rect x="24" y="35" width="14" height="11" rx="3" fill="${cf}" opacity="0.45"/>
-    <!-- clasp knob -->
-    <circle cx="31" cy="40.5" r="3.5" fill="${cg}"/>
-    <circle cx="31" cy="40.5" r="1.8" fill="${cl}" opacity="0.55"/>
-    <!-- lid (top face) -->
-    <polygon points="6,22 55,22 73,10 24,10" fill="${ct}"/>
-    <!-- lid highlight band -->
-    <polygon points="13,17 51,17 65,11 28,11" fill="${cg}" opacity="0.28"/>
-    <!-- lid right edge cap -->
-    <polygon points="55,22 73,10 73,14 55,26" fill="${cg}" opacity="0.18"/>
-    <!-- lid/front dividing line -->
-    <line x1="6" y1="22" x2="55" y2="22" stroke="${cg}" stroke-width="1" opacity="0.35"/>
+    <polygon points="52,26 68,18 68,52 52,60" fill="${s0}"/>
+    <line x1="52" y1="26" x2="68" y2="18" stroke="${acc}" stroke-width="1"   opacity="0.35"/>
+    <line x1="68" y1="18" x2="68" y2="52" stroke="${acc}" stroke-width="0.8" opacity="0.18"/>
+    <!-- front face -->
+    <polygon points="8,26 52,26 52,60 8,60" fill="url(#bfr${id})"/>
+    <polygon points="11,29 49,29 49,57 11,57" fill="none" stroke="${acc}" stroke-width="1" opacity="0.28"/>
+    <line x1="52" y1="26" x2="52" y2="60" stroke="${acc}" stroke-width="1.5" opacity="0.40"/>
+    <line x1="8"  y1="60" x2="52" y2="60" stroke="${s0}" stroke-width="1"   opacity="0.32"/>
+    <line x1="52" y1="60" x2="68" y2="52" stroke="${s0}" stroke-width="1"   opacity="0.28"/>
+    <!-- kanji circle -->
+    <circle cx="30" cy="44" r="10" fill="#0d0d1a" opacity="0.72"/>
+    <circle cx="30" cy="44" r="10" fill="none" stroke="${acc}" stroke-width="1.2" opacity="0.55"/>
+    <text x="30" y="48.5" text-anchor="middle" font-size="11" fill="${acc}" font-family="serif" font-weight="bold">${sym}</text>
+    <!-- corner rivets -->
+    <circle cx="11" cy="29" r="2" fill="${acc}" opacity="0.72"/>
+    <circle cx="49" cy="29" r="2" fill="${acc}" opacity="0.72"/>
+    <circle cx="11" cy="57" r="2" fill="${acc}" opacity="0.72"/>
+    <circle cx="49" cy="57" r="2" fill="${acc}" opacity="0.72"/>
+    <!-- lid front strip -->
+    <polygon points="8,20 52,20 52,26 8,26" fill="url(#btp${id})"/>
+    <!-- lid top face -->
+    <polygon points="8,20 52,20 68,12 24,12" fill="url(#btp${id})"/>
+    <polygon points="8,20 52,20 68,12 24,12" fill="${t0}" opacity="0.28"/>
+    <!-- lid top edges -->
+    <line x1="8"  y1="20" x2="52" y2="20" stroke="#fffff0" stroke-width="1.2" opacity="0.55"/>
+    <line x1="52" y1="20" x2="68" y2="12" stroke="${t0}"  stroke-width="1"   opacity="0.40"/>
+    <line x1="8"  y1="20" x2="24" y2="12" stroke="${t0}"  stroke-width="0.8" opacity="0.28"/>
+    <!-- lid right face -->
+    <polygon points="52,20 68,12 68,18 52,26" fill="${s0}" opacity="0.85"/>
+    <line x1="8" y1="26" x2="52" y2="26" stroke="${acc}" stroke-width="1" opacity="0.35"/>
+    <!-- lid rivets -->
+    <circle cx="10" cy="20" r="1.8" fill="#fffff0" opacity="0.75"/>
+    <circle cx="50" cy="20" r="1.8" fill="#fffff0" opacity="0.75"/>
+    <circle cx="25" cy="13" r="1.5" fill="${t0}"  opacity="0.65"/>
+    <circle cx="66" cy="13" r="1.5" fill="${t0}"  opacity="0.65"/>
+    <!-- clasp -->
+    <rect x="22" y="22" width="16" height="11" rx="3" fill="${s0}" stroke="${acc}" stroke-width="0.8"/>
+    <circle cx="30" cy="27" r="3"  fill="#0d0d1a" opacity="0.82"/>
+    <rect   x="29" y="27" width="2" height="4" rx="1" fill="#0d0d1a" opacity="0.82"/>
+    <!-- energy glow on lid -->
+    <ellipse cx="56" cy="16" rx="10" ry="5" fill="rgb(${glr})" opacity="0.22"/>
+    <!-- floating orb -->
+    <circle cx="42" cy="10" r="6"   fill="url(#borb${id})" opacity="0.70"/>
+    <circle cx="42" cy="10" r="2.8" fill="#fffff0"          opacity="0.65"/>
+    <line x1="42" y1="3"  x2="42" y2="1"  stroke="${acc}" stroke-width="1.2" opacity="0.65"/>
+    <line x1="49" y1="10" x2="52" y2="10" stroke="${acc}" stroke-width="1.2" opacity="0.65"/>
+    <line x1="35" y1="10" x2="32" y2="10" stroke="${acc}" stroke-width="1.2" opacity="0.65"/>
+    <line x1="47" y1="5"  x2="49" y2="3"  stroke="${acc}" stroke-width="0.8" opacity="0.45"/>
+    <line x1="37" y1="5"  x2="35" y2="3"  stroke="${acc}" stroke-width="0.8" opacity="0.45"/>
   </svg>`;
 }
 
@@ -612,194 +660,258 @@ function displayDropOverlay(drop, kind, normalizedDrop) {
 function animateBoxOpenPhase(container, box) {
   return new Promise((resolve) => {
     const nm = (box?.name || "").toLowerCase();
-    let cf, cs, ct, cg, cl, glowC;
+    let cf, cs, ct, cg, cl, glowC, sym;
     if (nm.includes("gold")) {
-      cf = "#b87d00"; cs = "#7a5200"; ct = "#d4a200"; cg = "#ffd050"; cl = "#9a6400"; glowC = "255,200,0";
+      cf="#b87800"; cs="#7a5000"; ct="#d4a020"; cg="#ffd850"; cl="#9a6200"; glowC="255,202,30"; sym="伝";
     } else if (nm.includes("silber")) {
-      cf = "#6e7e8e"; cs = "#46545e"; ct = "#96a8b8"; cg = "#c8dcea"; cl = "#566070"; glowC = "180,210,240";
+      cf="#607090"; cs="#384860"; ct="#90a8c0"; cg="#c0d8f0"; cl="#485870"; glowC="160,200,240"; sym="銀";
     } else {
-      cf = "#966030"; cs = "#623c16"; ct = "#b87240"; cg = "#de9860"; cl = "#784018"; glowC = "200,130,60";
+      cf="#904820"; cs="#5e2e10"; ct="#b06030"; cg="#d87840"; cl="#703810"; glowC="210,120,50"; sym="力";
     }
 
     const cvs = document.createElement("canvas");
-    cvs.width = 280; cvs.height = 200;
+    cvs.width = 280; cvs.height = 220;
     cvs.style.cssText = "display:block;margin:0 auto;border-radius:12px";
     container.appendChild(cvs);
     const ctx = cvs.getContext("2d");
 
-    const SHAKE_DUR = 680;
-    const OPEN_DUR = 720;
-    const HOLD_DUR = 340;
-    const TOTAL = SHAKE_DUR + OPEN_DUR + HOLD_DUR;
+    const SHAKE_DUR = 700;
+    const BURST_DUR = 140;
+    const OPEN_DUR  = 440;
+    const HOLD_DUR  = 500;
+    const TOTAL = SHAKE_DUR + BURST_DUR + OPEN_DUR + HOLD_DUR;
 
-    const CX = 130, BY = 162;
-    const BW = 88, BH = 66, SW = 26, SH = 18;
+    const CX = 130, BY = 178;
+    const BW = 88, BH = 60, SW = 26, SH = 16;
+    const LFH = 14; // lid front-face height
+    const TOP = BY - BH;
 
     const particles = [];
     let particlesSpawned = false;
+    let flashAlpha = 0;
 
-    function spawnParticles() {
-      for (let i = 0; i < 22; i++) {
-        const angle = (i / 22) * Math.PI * 2;
-        const speed = 1.8 + Math.random() * 2.8;
+    function spawnBurst() {
+      for (let i = 0; i < 42; i++) {
+        const a = (i / 42) * Math.PI * 2;
+        const spd = 3 + Math.random() * 6.5;
         particles.push({
-          x: CX, y: BY - BH - 10,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 3,
-          life: 1,
-          decay: 0.018 + Math.random() * 0.016,
-          r: 2 + Math.random() * 3,
-          col: Math.random() < 0.5 ? cg : ct,
+          x: CX, y: TOP - LFH,
+          vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 5.5,
+          life: 1, decay: 0.011 + Math.random() * 0.020,
+          r: 2 + Math.random() * 5,
+          col: Math.random() < 0.6 ? cg : ct,
         });
       }
     }
 
-    function drawBox(ox, oy, lidT) {
+    function draw(sx, sy, lidUp) {
       ctx.clearRect(0, 0, cvs.width, cvs.height);
+      ctx.fillStyle = "#0d0d1a";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-      // shadow
-      ctx.save();
-      ctx.globalAlpha = 0.26 - lidT * 0.08;
-      ctx.fillStyle = "rgba(0,0,0,1)";
-      ctx.beginPath();
-      ctx.ellipse(CX + ox, BY + 9, BW / 2 + 8 + lidT * 12, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      const bx = CX + sx - BW / 2;
+      const by = TOP + sy;
 
-      // right side face
-      ctx.fillStyle = cs;
-      ctx.beginPath();
-      ctx.moveTo(CX + ox + BW / 2, oy);
-      ctx.lineTo(CX + ox + BW / 2 + SW, oy - SH);
-      ctx.lineTo(CX + ox + BW / 2 + SW, oy + BH - SH);
-      ctx.lineTo(CX + ox + BW / 2, oy + BH);
-      ctx.closePath();
-      ctx.fill();
+      // Background glow grows with opening
+      if (lidUp > 4) {
+        const ga = Math.min(lidUp / 90, 1) * 0.52;
+        const bg = ctx.createRadialGradient(CX, by, 0, CX, by, 115);
+        bg.addColorStop(0, `rgba(${glowC},${ga.toFixed(2)})`);
+        bg.addColorStop(1, `rgba(${glowC},0)`);
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-      // front face
-      ctx.fillStyle = cf;
-      roundRect(ctx, CX + ox - BW / 2, oy, BW, BH, 3);
-      ctx.fill();
+        // Expanding energy rings
+        for (let ri = 0; ri < 3; ri++) {
+          const rp = ((lidUp / 190) + ri * 0.34) % 1;
+          ctx.save();
+          ctx.globalAlpha = (1 - rp) * 0.38;
+          ctx.strokeStyle = `rgba(${glowC},1)`; ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(CX, by, 28 + rp * 95, 11 + rp * 38, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
 
-      // front top highlight
-      ctx.fillStyle = cg;
-      ctx.globalAlpha = 0.11;
-      roundRect(ctx, CX + ox - BW / 2, oy, BW, 7, 3);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      // strap / band
-      ctx.fillStyle = cl;
-      ctx.globalAlpha = 0.68;
-      ctx.fillRect(CX + ox - BW / 2, oy + BH * 0.44, BW, BH * 0.16);
-      ctx.globalAlpha = 1;
-
-      // side strap
-      ctx.fillStyle = cl;
-      ctx.globalAlpha = 0.58;
-      ctx.beginPath();
-      ctx.moveTo(CX + ox + BW / 2, oy + BH * 0.44);
-      ctx.lineTo(CX + ox + BW / 2 + SW, oy + BH * 0.44 - SH);
-      ctx.lineTo(CX + ox + BW / 2 + SW, oy + BH * 0.44 + BH * 0.16 - SH * 0.16);
-      ctx.lineTo(CX + ox + BW / 2, oy + BH * 0.44 + BH * 0.16);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      // clasp
-      ctx.fillStyle = cl;
-      roundRect(ctx, CX + ox - 11, oy + BH * 0.34, 22, 18, 4);
-      ctx.fill();
-      ctx.fillStyle = cf;
-      ctx.globalAlpha = 0.45;
-      roundRect(ctx, CX + ox - 7, oy + BH * 0.40, 14, 11, 3);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = cg;
-      ctx.beginPath();
-      ctx.arc(CX + ox, oy + BH * 0.48, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // glow when opening
-      if (lidT > 0.05) {
-        const gR = 12 + lidT * 62;
-        const gY = oy - lidT * 30;
-        const grd = ctx.createRadialGradient(CX + ox, gY, 0, CX + ox, gY, gR);
-        grd.addColorStop(0, `rgba(${glowC},${(0.55 * lidT).toFixed(2)})`);
-        grd.addColorStop(0.5, `rgba(${glowC},${(0.20 * lidT).toFixed(2)})`);
-        grd.addColorStop(1, `rgba(${glowC},0)`);
-        ctx.fillStyle = grd;
+        // Light beam upward
+        const bh = lidUp * 2.4;
+        const bG = ctx.createLinearGradient(0, by, 0, by - bh);
+        bG.addColorStop(0, `rgba(${glowC},${(ga * 1.1).toFixed(2)})`);
+        bG.addColorStop(1, `rgba(${glowC},0)`);
+        ctx.fillStyle = bG;
         ctx.beginPath();
-        ctx.ellipse(CX + ox, gY, gR, gR * 0.75, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(CX - 10, by); ctx.lineTo(CX + 10, by);
+        ctx.lineTo(CX + 22 + lidUp * 0.12, by - bh);
+        ctx.lineTo(CX - 22 - lidUp * 0.12, by - bh);
+        ctx.closePath(); ctx.fill();
       }
 
-      // lid (animated: lifts up + slight tilt)
-      const lidLift = lidT * 60;
-      const lidAngle = -lidT * 0.38;
-
-      ctx.save();
-      ctx.translate(CX + ox - BW / 2, oy - lidLift);
-      ctx.rotate(lidAngle);
-
-      ctx.fillStyle = ct;
-      ctx.globalAlpha = 1 - lidT * 0.18;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(BW, 0);
-      ctx.lineTo(BW + SW, -SH);
-      ctx.lineTo(SW, -SH);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = cg;
-      ctx.globalAlpha = 0.30;
-      ctx.beginPath();
-      ctx.moveTo(8, -2);
-      ctx.lineTo(BW - 8, -2);
-      ctx.lineTo(BW + SW - 10, -SH + 3);
-      ctx.lineTo(SW + 4, -SH + 3);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.globalAlpha = 1;
+      // Ground shadow
+      ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = "#000";
+      ctx.beginPath(); ctx.ellipse(CX + sx, BY + 10, BW/2 + 12, 8, 0, 0, Math.PI*2); ctx.fill();
       ctx.restore();
 
-      // particles
-      particles.forEach((p) => {
-        if (p.life <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = p.life * 0.9;
-        ctx.fillStyle = p.col;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.14;
-        p.life -= p.decay;
+      // === BOX BODY ===
+      // Right side
+      ctx.fillStyle = cs;
+      ctx.beginPath();
+      ctx.moveTo(bx + BW, by); ctx.lineTo(bx + BW + SW, by - SH);
+      ctx.lineTo(bx + BW + SW, by + BH - SH); ctx.lineTo(bx + BW, by + BH);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = cg; ctx.globalAlpha = 0.22; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx + BW, by); ctx.lineTo(bx + BW + SW, by - SH); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Front face
+      ctx.fillStyle = cf; roundRect(ctx, bx, by, BW, BH, 4); ctx.fill();
+      ctx.strokeStyle = cg; ctx.globalAlpha = 0.28; ctx.lineWidth = 1.5;
+      roundRect(ctx, bx + 5, by + 5, BW - 10, BH - 10, 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      // Front right edge
+      ctx.strokeStyle = cg; ctx.globalAlpha = 0.38; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(bx + BW, by); ctx.lineTo(bx + BW, by + BH); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Symbol circle
+      const symY = by + BH * 0.60;
+      ctx.fillStyle = "#0d0d1a"; ctx.globalAlpha = 0.72;
+      ctx.beginPath(); ctx.arc(CX + sx, symY, 15, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = cg; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(CX + sx, symY, 15, 0, Math.PI*2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = cg; ctx.font = "bold 16px serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(sym, CX + sx, symY);
+
+      // Corner rivets
+      [[bx+6, by+6],[bx+BW-6, by+6],[bx+6, by+BH-6],[bx+BW-6, by+BH-6]].forEach(([rx,ry]) => {
+        ctx.fillStyle = cg; ctx.globalAlpha = 0.72;
+        ctx.beginPath(); ctx.arc(rx, ry, 3, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
       });
+
+      // Clasp — glows red during shake, disappears as lid flies away
+      if (lidUp < 55) {
+        const ca = 1 - lidUp / 55;
+        ctx.globalAlpha = ca;
+        ctx.fillStyle = cl;
+        roundRect(ctx, CX + sx - 14, by - 5, 28, 19, 5); ctx.fill();
+        if (sx !== 0) {
+          ctx.fillStyle = `rgba(255,70,40,0.48)`;
+          roundRect(ctx, CX + sx - 14, by - 5, 28, 19, 5); ctx.fill();
+        }
+        ctx.fillStyle = "#0d0d1a"; ctx.globalAlpha = ca * 0.85;
+        ctx.beginPath(); ctx.arc(CX + sx, by + 4.5, 5, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Opening glow from inside box
+      if (lidUp > 12) {
+        const og = Math.min((lidUp - 12) / 60, 1) * 0.85;
+        const oG = ctx.createRadialGradient(CX + sx, by, 0, CX + sx, by, 55);
+        oG.addColorStop(0, `rgba(${glowC},${og.toFixed(2)})`);
+        oG.addColorStop(0.5, `rgba(${glowC},${(og*0.4).toFixed(2)})`);
+        oG.addColorStop(1, `rgba(${glowC},0)`);
+        ctx.fillStyle = oG;
+        ctx.beginPath(); ctx.ellipse(CX + sx, by, 55, 30, 0, 0, Math.PI*2); ctx.fill();
+      }
+
+      // === LID — shoots straight up ===
+      const lidY = by - LFH - lidUp;
+      const lidOpa = Math.max(0, 1 - lidUp / 195);
+
+      if (lidOpa > 0.01) {
+        ctx.save(); ctx.globalAlpha = lidOpa;
+
+        // Lid front face
+        ctx.fillStyle = ct; roundRect(ctx, bx, lidY, BW, LFH, 3); ctx.fill();
+
+        // Lid top face (isometric)
+        ctx.fillStyle = ct;
+        ctx.beginPath();
+        ctx.moveTo(bx, lidY); ctx.lineTo(bx + BW, lidY);
+        ctx.lineTo(bx + BW + SW, lidY - SH); ctx.lineTo(bx + SW, lidY - SH);
+        ctx.closePath(); ctx.fill();
+
+        // Top highlight
+        ctx.fillStyle = cg; ctx.globalAlpha = lidOpa * 0.42;
+        ctx.beginPath();
+        ctx.moveTo(bx + 6, lidY - 1); ctx.lineTo(bx + BW - 6, lidY - 1);
+        ctx.lineTo(bx + BW + SW - 8, lidY - SH + 2); ctx.lineTo(bx + SW + 4, lidY - SH + 2);
+        ctx.closePath(); ctx.fill();
+
+        // Lid right face
+        ctx.fillStyle = cs; ctx.globalAlpha = lidOpa * 0.88;
+        ctx.beginPath();
+        ctx.moveTo(bx + BW, lidY); ctx.lineTo(bx + BW + SW, lidY - SH);
+        ctx.lineTo(bx + BW + SW, lidY - SH + LFH); ctx.lineTo(bx + BW, lidY + LFH);
+        ctx.closePath(); ctx.fill();
+
+        // Lid top edge
+        ctx.globalAlpha = lidOpa * 0.55;
+        ctx.strokeStyle = "#fffff0"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(bx, lidY); ctx.lineTo(bx + BW, lidY); ctx.stroke();
+        ctx.strokeStyle = ct; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(bx + BW, lidY); ctx.lineTo(bx + BW + SW, lidY - SH); ctx.stroke();
+
+        // Lid rivets
+        ctx.fillStyle = "#fffff0"; ctx.globalAlpha = lidOpa * 0.80;
+        [[bx + 4, lidY], [bx + BW - 4, lidY]].forEach(([rx, ry]) => {
+          ctx.beginPath(); ctx.arc(rx, ry, 2.5, 0, Math.PI*2); ctx.fill();
+        });
+
+        ctx.restore();
+      }
+
+      // Particles
+      for (const p of particles) {
+        if (p.life <= 0) continue;
+        ctx.save(); ctx.globalAlpha = p.life * 0.90;
+        ctx.shadowColor = p.col; ctx.shadowBlur = 8;
+        ctx.fillStyle = p.col;
+        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, p.r * p.life), 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+        p.x += p.vx; p.y += p.vy; p.vy += 0.17; p.life -= p.decay;
+      }
+
+      // Flash overlay
+      if (flashAlpha > 0.004) {
+        ctx.save(); ctx.globalAlpha = flashAlpha;
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cvs.width, cvs.height);
+        ctx.restore();
+      }
     }
 
     const t0 = performance.now();
     function step(now) {
       const el = now - t0;
+
       if (el < SHAKE_DUR) {
         const t = el / SHAKE_DUR;
-        const amp = 5.5 * (1 - t * 0.35);
-        const shakeX = Math.sin(t * Math.PI * 2 * 9) * amp;
-        const shakeY = Math.abs(Math.sin(t * Math.PI * 9)) * amp * 0.4;
-        drawBox(shakeX, BY - BH + shakeY, 0);
-      } else if (el < SHAKE_DUR + OPEN_DUR) {
-        const t = (el - SHAKE_DUR) / OPEN_DUR;
-        const ease = 1 - Math.pow(1 - t, 3);
-        if (ease > 0.7 && !particlesSpawned) { particlesSpawned = true; spawnParticles(); }
-        drawBox(0, BY - BH, ease);
+        const amp = 4 + t * 6.5;
+        const freq = 8 + t * 5;
+        const sx = Math.sin(t * Math.PI * 2 * freq) * amp;
+        const sy = Math.abs(Math.sin(t * Math.PI * freq)) * amp * 0.28;
+        flashAlpha = 0;
+        draw(sx, sy, 0);
+
+      } else if (el < SHAKE_DUR + BURST_DUR) {
+        const t = (el - SHAKE_DUR) / BURST_DUR;
+        flashAlpha = Math.sin(t * Math.PI) * 0.92;
+        if (t > 0.22 && !particlesSpawned) { particlesSpawned = true; spawnBurst(); }
+        draw(0, 0, t * 44);
+
+      } else if (el < SHAKE_DUR + BURST_DUR + OPEN_DUR) {
+        const t = (el - SHAKE_DUR - BURST_DUR) / OPEN_DUR;
+        const ease = 1 - Math.pow(1 - t, 2.5);
+        flashAlpha = (1 - t) * 0.12;
+        draw(0, 0, 44 + ease * 245);
+
       } else if (el < TOTAL) {
-        drawBox(0, BY - BH, 1);
+        flashAlpha = 0;
+        draw(0, 0, 289);
+
       } else {
-        drawBox(0, BY - BH, 1);
+        draw(0, 0, 289);
         resolve();
         return;
       }
