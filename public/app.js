@@ -1429,7 +1429,7 @@ window.addEventListener("keyup", (e) => keys.delete(e.code));
 function charParams(ch) {
   const base = {
     speed: 5.2,
-    jump: 13.8,
+    jump: 11.2,
     airControl: 0.75,
     doubleJump: false,
     dash: false,
@@ -1445,7 +1445,7 @@ function charParams(ch) {
       base.airControl = 0.55;
       break;
     case 2:
-      base.jump = 19.5;
+      base.jump = 14.5;
       break;
     case 3:
       base.doubleJump = true;
@@ -1971,8 +1971,8 @@ function physics(dt) {
   // gravity & glide
   const holdingJump = keys.has("Space") || keys.has("KeyW") || keys.has("ArrowUp");
   const cancelJump = keys.has("ArrowDown") || keys.has("KeyS");
-  const glideG = 18.5 * (prm._mods?.glide_grav_mul || 1);
-  const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 28.0;
+  const glideG = 16.0 * (prm._mods?.glide_grav_mul || 1);
+  const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 32.0;
 
   // Jump cancel / short hop: releasing jump early cuts upward velocity
   if (!holdingJump && p.vy < -2.0) {
