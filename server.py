@@ -96,6 +96,13 @@ CHARACTERS = [
         "desc": "Kurze Zeitlupe (E) mit Cooldown.",
         "cost": None,
     },
+    {
+        "id": 10,
+        "name": "Blaze",
+        "ability": "Grapple",
+        "desc": "Schiesst ein Kunai-Seil zum nächsten Hindernis und zieht sich heran (E/Shift). Hinterlässt Feuerspur.",
+        "cost": None,
+    },
 ]
 
 RARITY_ORDER = ["Bronze", "Silber", "Gold", "Platin", "Mythic"]
@@ -177,6 +184,7 @@ CHARACTER_DROP_TABLE = [
     {"character_id": 6, "rarity": "Platin"},  # Shield
     {"character_id": 8, "rarity": "Platin"},  # Wall Jump
     {"character_id": 9, "rarity": "Mythic"},  # Slow-mo
+    {"character_id": 10, "rarity": "Platin"},  # Grapple
 ]
 
 

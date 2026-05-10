@@ -1476,7 +1476,7 @@ function updateTouchActionLabel() {
   const btn = document.getElementById("touch-action");
   if (!btn) return;
   const id = activeCharacter?.id ?? 0;
-  const labels = { 4: "DASH", 9: "SLOW" };
+  const labels = { 4: "DASH", 9: "SLOW", 10: "GRPL" };
   const hasAction = labels[id] != null;
   btn.textContent = labels[id] || "ACT";
   btn.style.opacity = hasAction ? "1" : "0.38";
@@ -1508,6 +1508,7 @@ function charParams(ch) {
     glide: false,
     wallJump: false,
     slowmo: false,
+    grapple: false,
     coyoteTime: 0,
   };
   switch (ch?.id ?? 0) {
@@ -1546,6 +1547,10 @@ function charParams(ch) {
       break;
     case 9: // Chrono — extreme slow-mo, long duration, short cooldown
       base.slowmo = true;
+      break;
+    case 10: // Blaze — fire trail + kunai grapple (E/Shift)
+      base.grapple = true;
+      base.speed = 5.5;
       break;
   }
   // apply equipped gear mods
@@ -1747,6 +1752,7 @@ const game = {
   platforms: [],
   obstacles: [],
   coinsFx: [],
+  fireParticles: [],
   _lastPlatY: 0,
   runCharId: 0,
   runEquipSnapshot: null, // equipment snapshot for stable look during the run
@@ -1772,6 +1778,7 @@ function restart() {
   game.speedMul = 1;
   game.slowUntil = 0;
   game.slowCooldownUntil = 0;
+  game.fireParticles = [];
   game.runCharId = activeCharacter?.id ?? 0;
   game.runEquipSnapshot = me?.equipment ? JSON.parse(JSON.stringify(me.equipment)) : null;
   game.player = {
@@ -1785,6 +1792,8 @@ function restart() {
     jumpsLeft: p.doubleJump ? 1 : 0,
     dashReady: true,
     dashUntil: 0,
+    grappleReady: true,
+    grapple: null,
     shieldReady: p.shield ? true : false,
     shieldCharges: (p.shield ? (p.shieldBase || 1) : 0) + (p._mods?.shield_charges_add || 0),
     invUntil: 0,
@@ -2032,6 +2041,46 @@ function trySlowmo() {
   game.slowCooldownUntil = game.t + 3.5 * (prm._mods?.slow_cd_mul || 1);
 }
 
+function tryGrapple() {
+  const prm = charParams(activeCharacter);
+  if (!prm.grapple) return;
+  const p = game.player;
+  if (!keys.has("ShiftLeft") && !keys.has("ShiftRight") && !keys.has("KeyE")) return;
+  if (!p.grappleReady || p.grapple) return;
+
+  const ox = p.x + p.w;
+  const oy = p.y + p.h / 2;
+  let bestTarget = null;
+  let bestScore = Infinity;
+
+  for (const pl of game.platforms) {
+    if (pl.x < ox + 20) continue;
+    const tx = pl.x + Math.min(pl.w * 0.3, 80);
+    const ty = pl.y;
+    const ddx = tx - ox;
+    if (ddx > 440) continue;
+    const score = ddx * 0.6 + Math.abs(ty - oy) * 0.45;
+    if (score < bestScore) { bestScore = score; bestTarget = { x: tx, y: ty }; }
+  }
+
+  if (!bestTarget) return;
+
+  p.grappleReady = false;
+  const gdx = bestTarget.x - ox;
+  const gdy = bestTarget.y - oy;
+  const gdist = Math.hypot(gdx, gdy);
+  const spd = 15;
+  p.grapple = {
+    x: ox, y: oy,
+    vx: (gdx / gdist) * spd,
+    vy: (gdy / gdist) * spd,
+    phase: "flying",
+    ax: bestTarget.x,
+    ay: bestTarget.y,
+  };
+  setTimeout(() => { if (game.player) game.player.grappleReady = true; }, 1700);
+}
+
 function physics(dt) {
   const prm = charParams(activeCharacter);
   const p = game.player;
@@ -2050,27 +2099,45 @@ function physics(dt) {
   const boostMul = (p.boosterUntil && p.boosterUntil > game.t) ? 1.48 : 1.0;
   p.vx = prm.speed * dash * boostMul;
 
-  // gravity & glide
+  // grapple — fire kunai and override velocity when hooked
+  tryGrapple();
+  if (p.grapple?.phase === "hooked") {
+    const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
+    const gdx = p.grapple.ax - pcx, gdy = p.grapple.ay - pcy;
+    const gdist = Math.hypot(gdx, gdy);
+    if (gdist < 28) {
+      p.grapple = null;
+    } else {
+      const pullSpd = Math.min(16, gdist * 0.52 + 7);
+      p.vx = (gdx / gdist) * pullSpd;
+      p.vy = (gdy / gdist) * pullSpd;
+      p.onGround = false;
+    }
+  }
+
+  // gravity & glide (skip while grapple is actively pulling)
   const holdingJump = keys.has("Space") || keys.has("KeyW") || keys.has("ArrowUp");
   const cancelJump = keys.has("ArrowDown") || keys.has("KeyS");
-  const glideG = 7.5 * (prm._mods?.glide_grav_mul || 1);
-  const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 32.0;
+  if (!p.grapple || p.grapple.phase !== "hooked") {
+    const glideG = 7.5 * (prm._mods?.glide_grav_mul || 1);
+    const g = prm.glide && holdingJump && p.vy > 0 ? glideG : 32.0;
 
-  // Jump cancel / short hop: releasing jump early cuts upward velocity
-  // Math.pow normalizes the per-frame damping to be frame-rate independent
-  if (!holdingJump && p.vy < -2.0) {
-    p.vy *= Math.pow(0.55, dt * 60);
+    // Jump cancel / short hop: releasing jump early cuts upward velocity
+    // Math.pow normalizes the per-frame damping to be frame-rate independent
+    if (!holdingJump && p.vy < -2.0) {
+      p.vy *= Math.pow(0.55, dt * 60);
+    }
+    // Fast-fall: ArrowDown/S cuts upward velocity, then falls faster
+    if (cancelJump && p.vy < -2.0) {
+      p.vy *= Math.pow(0.35, dt * 60);
+    }
+    p.vy += g * dt;
+    if (cancelJump && p.vy > 0) {
+      p.vy += 26.0 * dt;
+    }
+    // Terminal velocity prevents tunneling through thin platforms at low FPS
+    p.vy = Math.min(p.vy, 26);
   }
-  // Fast-fall: ArrowDown/S cuts upward velocity, then falls faster
-  if (cancelJump && p.vy < -2.0) {
-    p.vy *= Math.pow(0.35, dt * 60);
-  }
-  p.vy += g * dt;
-  if (cancelJump && p.vy > 0) {
-    p.vy += 26.0 * dt;
-  }
-  // Terminal velocity prevents tunneling through thin platforms at low FPS
-  p.vy = Math.min(p.vy, 26);
   // Normalize position update to 60fps reference — same jump height at any framerate
   p.y += p.vy * dt * 60;
 
@@ -2134,6 +2201,45 @@ function physics(dt) {
   for (const plat of game.platforms) plat.x -= dx;
   for (const ob of game.obstacles) ob.x -= dx;
   for (const c of game.coinsFx) c.x -= dx;
+  for (const fp of game.fireParticles) fp.x -= dx;
+  if (p.grapple) { p.grapple.x -= dx; p.grapple.ax -= dx; }
+
+  // advance and cull fire particles
+  game.fireParticles.forEach(fp => {
+    fp.life -= dt;
+    fp.x += fp.vx * dt;
+    fp.y += fp.vy * dt;
+    fp.vy += 22 * dt;
+  });
+  game.fireParticles = game.fireParticles.filter(fp => fp.life > 0);
+
+  // advance grapple kunai projectile
+  if (p.grapple?.phase === "flying") {
+    p.grapple.x += p.grapple.vx * 60 * dt;
+    p.grapple.y += p.grapple.vy * 60 * dt;
+    p.grapple.vy += 5 * dt;
+    if (Math.hypot(p.grapple.ax - p.grapple.x, p.grapple.ay - p.grapple.y) < 22) {
+      p.grapple.phase = "hooked";
+    } else if (p.grapple.x > W + 120 || p.grapple.y < -80 || p.grapple.y > H + 80) {
+      p.grapple = null;
+      if (game.player) game.player.grappleReady = true;
+    }
+  }
+
+  // spawn fire trail particles for Blaze
+  if (prm.grapple) {
+    for (let fi = 0; fi < 2; fi++) {
+      game.fireParticles.push({
+        x: p.x + 4 + Math.random() * 14,
+        y: p.y + p.h * 0.58 + Math.random() * 10,
+        vx: -(14 + Math.random() * 22),
+        vy: -(28 + Math.random() * 28),
+        life: 0.24 + Math.random() * 0.18,
+        maxLife: 0.36,
+        r: 2.2 + Math.random() * 2.4,
+      });
+    }
+  }
 
   // cleanup and spawn
   game.platforms = game.platforms.filter((pl) => pl.x + pl.w > -120);
@@ -2495,6 +2601,20 @@ function draw() {
     ctx.globalAlpha = 1; ctx.restore();
   }
 
+  // Fire trail particles (Blaze)
+  if (game.fireParticles.length > 0) {
+    for (const fp of game.fireParticles) {
+      const t = fp.life / fp.maxLife;
+      ctx.save();
+      ctx.globalAlpha = t * 0.82;
+      ctx.shadowColor = "rgba(255,90,0,.75)"; ctx.shadowBlur = 6;
+      const r = t > 0.55 ? "255,210,50" : t > 0.28 ? "255,120,25" : "210,40,0";
+      ctx.fillStyle = `rgba(${r},1)`;
+      ctx.beginPath(); ctx.arc(fp.x, fp.y, fp.r * (0.5 + t * 0.5), 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
   // Dash trail
   if (game.running && p && p.dashUntil > game.t) {
     ctx.save();
@@ -2568,6 +2688,30 @@ function draw() {
   drawPlayerAccessory(ctx, p, style);
   ctx.restore();
 
+  // Grapple rope + flying kunai (Blaze)
+  if (p && p.grapple) {
+    const rpx = p.x + p.w, rpy = p.y + p.h / 2;
+    const kx = p.grapple.x, ky = p.grapple.y;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,95,25,.78)"; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.shadowColor = "rgba(255,70,0,.55)"; ctx.shadowBlur = 5;
+    ctx.beginPath(); ctx.moveTo(rpx, rpy); ctx.lineTo(kx, ky); ctx.stroke();
+    ctx.setLineDash([]); ctx.shadowBlur = 0;
+    const ang = p.grapple.phase === "flying"
+      ? Math.atan2(p.grapple.vy, p.grapple.vx)
+      : Math.atan2(p.grapple.ay - rpy, p.grapple.ax - rpx);
+    ctx.save();
+    ctx.translate(kx, ky); ctx.rotate(ang);
+    ctx.shadowColor = "rgba(255,140,0,.80)"; ctx.shadowBlur = 7;
+    ctx.fillStyle = "rgba(200,200,215,.92)";
+    ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(-4, -4); ctx.lineTo(-4, 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "rgba(130,52,15,.88)";
+    ctx.fillRect(-8, -1.5, 4, 3);
+    ctx.restore();
+    ctx.restore();
+  }
+
   // === ABILITY HUD ===
   ctx.save();
   ctx.globalAlpha = 0.88;
@@ -2582,6 +2726,7 @@ function draw() {
   else if (prm.slowmo) hint = game.t < game.slowCooldownUntil ? `Slow-mo CD: ${(game.slowCooldownUntil-game.t).toFixed(1)}s` : (game.t < game.slowUntil ? "SLOW-MO AKTIV!" : "E = Slow-mo");
   else if (prm.shield) hint = p.shieldCharges > 0 ? `Shield: ${p.shieldCharges} Treffer` : "Shield: verbraucht";
   else if (prm.magnet) hint = "Coin Magnet aktiv";
+  else if (prm.grapple) hint = p.grapple ? (p.grapple.phase === "hooked" ? "SEIL AKTIV!" : "Kunai fliegt…") : (p.grappleReady ? "E/Shift = Kunai" : "Kunai lädt…");
   ctx.fillText(ability, 18, 26);
   if (hint) {
     ctx.globalAlpha = game.t < game.slowUntil || (prm.dash && game.t < (p.dashUntil||0)) ? 1.0 : 0.60;
@@ -2750,6 +2895,18 @@ function playerStyle(characterId, skinKey) {
       base.hat = "crown";
       base.glowColor = "172,98,255";
       base.emblem = "clock";
+      break;
+
+    case 10: // Blaze – FIRE NINJA (dark crimson body, orange glow, ninja mask)
+      base.c1 = "rgba(168,22,0,.97)";
+      base.c2 = "rgba(255,88,0,.82)";
+      base.head = "rgba(208,42,5,.97)";
+      base.pack = "rgba(255,65,0,.24)";
+      base.outline = "rgba(255,118,0,.55)";
+      base.headR = 10; base.bodyR = 11;
+      base.hat = "ninja_mask";
+      base.glowColor = "255,72,0";
+      base.emblem = "kunai";
       break;
   }
 
@@ -2988,6 +3145,27 @@ function drawPlayerAccessory(ctx, p, style) {
     ctx.fillStyle = "rgba(80,218,255,.92)"; ctx.beginPath(); ctx.arc(cx, hcy - hr - 14, 2.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "rgba(80,255,140,.92)"; ctx.beginPath(); ctx.arc(cx + 13, hcy - hr - 10, 2.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
+  } else if (style.hat === "ninja_mask") {
+    ctx.save();
+    // Headband (dark strip across forehead)
+    ctx.fillStyle = "rgba(12,12,12,.95)";
+    roundRect(ctx, p.x + 3, hcy - hr, p.w - 6, 8, 4); ctx.fill();
+    // Fire circle on headband
+    ctx.fillStyle = "rgba(200,28,0,.90)";
+    ctx.shadowColor = "rgba(255,80,0,.70)"; ctx.shadowBlur = 5;
+    ctx.beginPath(); ctx.arc(cx, hcy - hr + 4, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Lower mask (below eyes)
+    ctx.fillStyle = "rgba(14,14,14,.88)";
+    roundRect(ctx, p.x + 5, hcy + 3, p.w - 10, 7, 3); ctx.fill();
+    // Red scarf tail trailing left
+    ctx.fillStyle = "rgba(178,18,0,.70)";
+    ctx.beginPath();
+    ctx.moveTo(p.x + 2, hcy - 2);
+    ctx.quadraticCurveTo(p.x - 11, hcy + 3, p.x - 7, hcy + 12);
+    ctx.quadraticCurveTo(p.x - 1, hcy + 8, p.x + 3, hcy);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
 
   // === EMBLEM ON CHEST ===
@@ -3028,6 +3206,15 @@ function drawPlayerAccessory(ctx, p, style) {
       ctx.beginPath(); ctx.arc(ex,ey+2,7,0,Math.PI*2); ctx.fill();
       ctx.globalAlpha = 0.82; ctx.strokeStyle = "rgba(255,255,255,.38)"; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(ex,ey+2,4,0,Math.PI*2); ctx.stroke();
+    } else if (style.emblem === "kunai") {
+      ctx.save();
+      ctx.translate(ex, ey + 2);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillStyle = "rgba(198,198,212,.85)";
+      ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-2.5, 2); ctx.lineTo(2.5, 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(110,45,10,.82)";
+      ctx.fillRect(-2, 2, 4, 6);
+      ctx.restore();
     } else {
       ctx.beginPath(); ctx.arc(ex,ey+2,6,0,Math.PI*2); ctx.fill();
     }
