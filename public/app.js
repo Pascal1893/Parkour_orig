@@ -2069,9 +2069,13 @@ function physics(dt) {
   if (cancelJump && p.vy > 0) {
     p.vy += 26.0 * dt;
   }
-  // Normalize position update to 60fps reference so jump height is
-  // identical at 30fps, 60fps, 120fps, 144fps, etc.
+  // Terminal velocity prevents tunneling through thin platforms at low FPS
+  p.vy = Math.min(p.vy, 26);
+  // Normalize position update to 60fps reference — same jump height at any framerate
   p.y += p.vy * dt * 60;
+
+  // Death zone: fell off the bottom of the map
+  if (p.y > H + 80) { gameOver(); return; }
 
   // update moving platforms
   for (const plat of game.platforms) {
@@ -2379,27 +2383,52 @@ function draw() {
     }
     if (o.type === "pillar") {
       ctx.save();
-      ctx.shadowColor = "rgba(124,92,255,.48)"; ctx.shadowBlur = 8;
-      ctx.fillStyle = "rgba(58,38,108,.68)"; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
-      ctx.strokeStyle = "rgba(178,138,255,.48)"; ctx.lineWidth = 2; ctx.stroke();
-      ctx.globalAlpha = 0.24; ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1;
+      ctx.shadowColor = "rgba(148,108,255,.70)"; ctx.shadowBlur = 12;
+      const pg = ctx.createLinearGradient(o.x, o.y, o.x+o.w, o.y+o.h);
+      pg.addColorStop(0, "rgba(80,52,155,.95)"); pg.addColorStop(1, "rgba(44,28,98,.95)");
+      ctx.fillStyle = pg; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
+      ctx.strokeStyle = "rgba(198,158,255,.80)"; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.globalAlpha = 0.32; ctx.strokeStyle = "rgba(255,255,255,.50)"; ctx.lineWidth = 1;
       for (let gy = o.y+12; gy < o.y+o.h-8; gy+=15) { ctx.beginPath(); ctx.moveTo(o.x+5,gy); ctx.lineTo(o.x+o.w-5,gy); ctx.stroke(); }
+      // bright top cap
+      ctx.globalAlpha = 0.55; ctx.fillStyle = "rgba(210,185,255,.70)";
+      roundRect(ctx, o.x+2, o.y+1, o.w-4, 5, 4); ctx.fill();
       ctx.restore(); continue;
     }
     if (o.type === "beam") {
       ctx.save();
-      ctx.fillStyle = "rgba(98,78,178,.38)"; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
-      ctx.strokeStyle = "rgba(198,168,255,.52)"; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.shadowColor = "rgba(148,108,255,.60)"; ctx.shadowBlur = 10;
+      const bg2 = ctx.createLinearGradient(o.x, o.y, o.x, o.y+o.h);
+      bg2.addColorStop(0, "rgba(135,105,220,.92)"); bg2.addColorStop(1, "rgba(88,62,168,.88)");
+      ctx.fillStyle = bg2; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
+      ctx.strokeStyle = "rgba(215,185,255,.78)"; ctx.lineWidth = 2; ctx.stroke();
+      // top highlight stripe
+      ctx.fillStyle = "rgba(235,215,255,.55)"; roundRect(ctx, o.x+3, o.y+2, o.w-6, 4, 3); ctx.fill();
       ctx.restore(); continue;
     }
     if (o.type === "block" || o.type === "crate") {
       ctx.save();
-      ctx.fillStyle = o.type==="crate" ? "rgba(98,72,38,.58)" : "rgba(58,48,88,.58)";
-      roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
-      ctx.strokeStyle = o.type==="crate" ? "rgba(198,158,78,.48)" : "rgba(178,148,255,.42)";
-      ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.globalAlpha = 0.18; ctx.fillStyle = "rgba(255,255,255,.22)";
-      roundRect(ctx, o.x+3, o.y+2, o.w-6, 5, 3); ctx.fill();
+      if (o.type === "crate") {
+        ctx.shadowColor = "rgba(210,150,60,.55)"; ctx.shadowBlur = 8;
+        const cg = ctx.createLinearGradient(o.x, o.y, o.x, o.y+o.h);
+        cg.addColorStop(0, "rgba(165,108,48,.95)"); cg.addColorStop(1, "rgba(108,68,28,.95)");
+        ctx.fillStyle = cg; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
+        ctx.strokeStyle = "rgba(230,178,88,.80)"; ctx.lineWidth = 2.5; ctx.stroke();
+        // cross lines
+        ctx.globalAlpha = 0.30; ctx.strokeStyle = "rgba(255,205,100,.60)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(o.x+o.w/2,o.y+3); ctx.lineTo(o.x+o.w/2,o.y+o.h-3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(o.x+3,o.y+o.h/2); ctx.lineTo(o.x+o.w-3,o.y+o.h/2); ctx.stroke();
+      } else {
+        ctx.shadowColor = "rgba(108,82,200,.55)"; ctx.shadowBlur = 8;
+        const bkg = ctx.createLinearGradient(o.x, o.y, o.x, o.y+o.h);
+        bkg.addColorStop(0, "rgba(88,68,148,.95)"); bkg.addColorStop(1, "rgba(52,38,108,.95)");
+        ctx.fillStyle = bkg; roundRect(ctx, o.x, o.y, o.w, o.h, 8); ctx.fill();
+        ctx.strokeStyle = "rgba(198,168,255,.80)"; ctx.lineWidth = 2.5; ctx.stroke();
+      }
+      // bright top edge (shows it's landable)
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = o.type==="crate" ? "rgba(255,215,120,.65)" : "rgba(215,195,255,.65)";
+      roundRect(ctx, o.x+3, o.y+2, o.w-6, 4, 3); ctx.fill();
       ctx.restore(); continue;
     }
     if (o.type === "spike") {
@@ -3449,6 +3478,23 @@ function initAdminPanel() {
         adminMsg("#admin-gift-box-msg", `Box gesendet.`, true);
       } catch (e) {
         adminMsg("#admin-gift-box-msg", `Fehler: ${e.message}`);
+      }
+    });
+  }
+
+  const btnDeleteUser = $("#btn-admin-delete-user");
+  if (btnDeleteUser) {
+    btnDeleteUser.addEventListener("click", async () => {
+      if (!adminSelectedUserId) return;
+      const label = document.querySelector(`.admin-user-row[data-user-id="${adminSelectedUserId}"]`)?.textContent?.trim() || `ID ${adminSelectedUserId}`;
+      if (!confirm(`Account "${label}" endgültig löschen? Alle Daten werden unwiderruflich entfernt.`)) return;
+      try {
+        await api("/api/admin/delete_user", { method: "POST", body: JSON.stringify({ user_id: adminSelectedUserId }) });
+        adminMsg("#admin-delete-msg", "Account gelöscht.", true);
+        adminMsg("#admin-global-msg", `Account "${label}" wurde gelöscht.`, true);
+        await loadAdminUsers();
+      } catch (e) {
+        adminMsg("#admin-delete-msg", `Fehler: ${e.message}`);
       }
     });
   }

@@ -1233,6 +1233,29 @@ class ParkourHandler(SimpleHTTPRequestHandler):
             conn.close()
         json_response(self, HTTPStatus.OK, {"ok": True})
 
+    def _api_admin_delete_user(self) -> None:
+        uid = self._require_admin()
+        if uid is None:
+            return
+        data = _read_json(self) or {}
+        try:
+            target_id = int(data.get("user_id"))
+        except Exception:
+            return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "bad_request"})
+        conn = _db()
+        try:
+            row = conn.execute("SELECT id, is_admin FROM users WHERE id = ?", (target_id,)).fetchone()
+            if not row:
+                return json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "error": "user_not_found"})
+            if int(row["is_admin"] if "is_admin" in row.keys() else 0):
+                return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "cannot_delete_admin"})
+            # ON DELETE CASCADE removes all related rows automatically
+            conn.execute("DELETE FROM users WHERE id = ?", (target_id,))
+            conn.commit()
+        finally:
+            conn.close()
+        json_response(self, HTTPStatus.OK, {"ok": True})
+
     def _api_admin(self, path: str) -> None:
         if path == "/api/admin/users":
             return self._api_admin_users()
@@ -1242,6 +1265,8 @@ class ParkourHandler(SimpleHTTPRequestHandler):
             return self._api_admin_reset_password()
         if path == "/api/admin/gift":
             return self._api_admin_gift()
+        if path == "/api/admin/delete_user":
+            return self._api_admin_delete_user()
         return json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "error": "not_found"})
 
     def _api_gifts(self) -> None:
