@@ -2044,7 +2044,7 @@ function physics(dt) {
 
   // dash
   tryDash(dt);
-  const dash = game.t < p.dashUntil ? 2.8 : 1.0;
+  const dash = game.t < p.dashUntil ? 2.2 : 1.0;
 
   // base forward (+ booster)
   const boostMul = (p.boosterUntil && p.boosterUntil > game.t) ? 1.48 : 1.0;
@@ -2082,14 +2082,14 @@ function physics(dt) {
     }
   }
 
-  // collisions with platforms
+  // collisions with platforms — swept check: was above, now at/below top
   p.onGround = false;
   const foot = p.y + p.h;
   const prevFoot = prevY + p.h;
   for (const plat of game.platforms) {
     if (p.x + p.w > plat.x && p.x < plat.x + plat.w) {
       const top = plat.y;
-      if (foot >= top && foot <= top + 18 && p.vy >= 0) {
+      if (prevFoot <= top + 1 && foot >= top && p.vy >= 0) {
         p.y = top - p.h;
         p.vy = 0;
         p.onGround = true;
@@ -3008,7 +3008,7 @@ function drawPlayerAccessory(ctx, p, style) {
 
 let last = performance.now();
 function loop(now) {
-  const dt = clamp((now - last) / 1000, 0, 0.04);
+  const dt = clamp((now - last) / 1000, 0, 0.025);
   last = now;
   game.t += dt;
   if (game.running && !game.over) physics(dt);
