@@ -51,6 +51,9 @@ function setUserPill() {
   pill.textContent = `${me.username} · Coins ${me.coins} · Gems ${me.gems || 0}`;
   btnAuth.style.display = "none";
   btnLogout.style.display = "";
+  // Close welcome screen on successful login/register
+  closeModal("#welcome-overlay");
+  sessionStorage.setItem("guest_mode", "1");
 }
 
 function openModal(id) {
@@ -1395,6 +1398,10 @@ const GROUND_Y = H - 86;
 
 let keys = new Set();
 window.addEventListener("keydown", (e) => {
+  // Don't intercept keys while typing in a form field
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
   if (
     [
       "Space",
@@ -1422,11 +1429,16 @@ window.addEventListener("keydown", (e) => {
     closeModal("#modal-preview");
     closeModal("#modal-difficulty");
     closeModal("#modal-pass");
+    closeModal("#welcome-overlay");
   }
   if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") gameStartOrJump();
   if (e.code === "KeyR") restart();
 });
-window.addEventListener("keyup", (e) => keys.delete(e.code));
+window.addEventListener("keyup", (e) => {
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  keys.delete(e.code);
+});
 
 // ── Touch Controls ─────────────────────────────────────────────────────────
 if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
@@ -3016,6 +3028,29 @@ function loop(now) {
   await refreshInventory();
   await refreshLeaderboard();
   renderShop();
+
+  // Show welcome screen if not logged in and haven't dismissed it this session
+  if (!me && !sessionStorage.getItem("guest_mode")) {
+    openModal("#welcome-overlay");
+  }
+
+  // Welcome screen button handlers
+  $("#welcome-login").addEventListener("click", () => {
+    closeModal("#welcome-overlay");
+    document.querySelector("#modal-auth .tab[data-tab='login']")?.click();
+    openModal("#modal-auth");
+    setTimeout(() => document.querySelector("#modal-auth input[name='username']")?.focus(), 80);
+  });
+  $("#welcome-register").addEventListener("click", () => {
+    closeModal("#welcome-overlay");
+    document.querySelector("#modal-auth .tab[data-tab='register']")?.click();
+    openModal("#modal-auth");
+    setTimeout(() => document.querySelector("#modal-auth input[name='username']")?.focus(), 80);
+  });
+  $("#welcome-guest").addEventListener("click", () => {
+    sessionStorage.setItem("guest_mode", "1");
+    closeModal("#welcome-overlay");
+  });
 
   $("#btn-refresh").addEventListener("click", refreshLeaderboard);
   $("#btn-auth").addEventListener("click", () => openModal("#modal-auth"));

@@ -498,6 +498,58 @@ small{color:var(--muted)}
   .hud{inset: 0 8px 8px 8px}
 }
 
+/* ── Welcome / Login Gate ────────────────────────────────────────────── */
+.welcome-card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, calc(100% - 32px));
+  background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 26px;
+  padding: 44px 36px 36px;
+  text-align: center;
+  box-shadow: 0 40px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.06);
+  animation: drop-reveal .38s ease both;
+}
+.welcome-logo {
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(124,92,255,.97), rgba(62,242,177,.88));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 26px;
+  margin: 0 auto 20px;
+  box-shadow: 0 14px 44px rgba(124,92,255,.42);
+}
+.welcome-title {
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: .3px;
+  margin-bottom: 10px;
+}
+.welcome-sub {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+  margin-bottom: 32px;
+}
+.welcome-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.welcome-actions .btn { flex: 1; padding: 12px; }
+.welcome-guest-btn {
+  width: 100%;
+  font-size: 13px;
+  color: var(--muted) !important;
+  border-color: rgba(255,255,255,.08);
+}
+.welcome-guest-btn:hover { color: var(--text) !important; }
+
 /* ── Touch Controls ──────────────────────────────────────────────────── */
 .touch-controls {
   display: none;
