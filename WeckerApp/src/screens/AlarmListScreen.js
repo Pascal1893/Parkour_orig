@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -21,7 +22,14 @@ import { COLORS, FONT_SIZE, SPACING, SHADOWS } from '../constants/theme';
 
 // Hauptscreen: Zeigt die aktuelle Zeit und alle Wecker
 export default function AlarmListScreen({ navigation }) {
-  const { alarms, loading, saveAlarm, toggleAlarm, deleteAlarm } = useAlarms();
+  const { alarms, loading, saveAlarm, toggleAlarm, deleteAlarm, reloadAlarms } = useAlarms();
+
+  // Wecker neu laden wenn dieser Screen den Fokus bekommt (z.B. nach Zurück-Navigation)
+  useFocusEffect(
+    useCallback(() => {
+      reloadAlarms();
+    }, [reloadAlarms])
+  );
   const [ringingAlarm, setRingingAlarm] = useState(null); // Aktuell klingelnder Wecker
   const [refreshing, setRefreshing] = useState(false);
   // Animation für neuen Wecker (Fade-In des Headers)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   loadAlarms,
   saveAlarms,
@@ -15,12 +15,16 @@ export function useAlarms() {
   const [alarms, setAlarms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Wecker beim Start laden
+  // Wecker aus AsyncStorage laden
+  const reloadAlarms = useCallback(async () => {
+    const data = await loadAlarms();
+    setAlarms(data);
+    setLoading(false);
+  }, []);
+
+  // Beim ersten Laden
   useEffect(() => {
-    loadAlarms().then((data) => {
-      setAlarms(data);
-      setLoading(false);
-    });
+    reloadAlarms();
   }, []);
 
   // Wecker speichern oder aktualisieren
@@ -61,5 +65,5 @@ export function useAlarms() {
     setAlarms(updatedList);
   }, [alarms]);
 
-  return { alarms, loading, saveAlarm, toggleAlarm, deleteAlarm };
+  return { alarms, loading, saveAlarm, toggleAlarm, deleteAlarm, reloadAlarms };
 }
