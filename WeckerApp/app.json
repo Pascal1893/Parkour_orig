@@ -4,16 +4,8 @@
     "slug": "wecker-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "backgroundColor": "#F0F4FF"
-    },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
       "package": "com.wecker.app",
       "permissions": [
         "android.permission.VIBRATE",
