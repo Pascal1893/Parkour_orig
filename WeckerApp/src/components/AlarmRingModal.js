@@ -101,21 +101,16 @@ export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) 
         playThroughEarpieceAndroid: false,
       });
 
-      let soundSource;
+      // Nur bei eigenem Sound über expo-av abspielen
+      // Vorinstallierte Sounds werden über die Notification abgespielt
       if (alarm?.sound?.type === 'custom' && alarm?.sound?.uri) {
-        // Eigenen Sound aus der Medienbibliothek abspielen
-        soundSource = { uri: alarm.sound.uri };
-      } else {
-        // Tor-Sound (muss als assets/sounds/goal.mp3 vorhanden sein)
-        soundSource = require('../../assets/sounds/goal.mp3');
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: alarm.sound.uri },
+          { isLooping: true, volume: 1.0 }
+        );
+        soundRef.current = sound;
+        await sound.playAsync();
       }
-
-      const { sound } = await Audio.Sound.createAsync(soundSource, {
-        isLooping: true,
-        volume: 1.0,
-      });
-      soundRef.current = sound;
-      await sound.playAsync();
     } catch (e) {
       console.warn('Sound konnte nicht abgespielt werden:', e.message);
       // App funktioniert auch ohne Sound
