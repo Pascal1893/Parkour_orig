@@ -19,6 +19,7 @@ import { useAlarms } from '../hooks/useAlarms';
 import { createNewAlarm } from '../utils/storage';
 import DaySelector from '../components/DaySelector';
 import GlassButton from '../components/GlassButton';
+import SleepTimer from '../components/SleepTimer';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 // Vorinstallierte Sounds
@@ -182,6 +183,9 @@ export default function AddAlarmScreen({ navigation, route }) {
                 maxLength={30}
               />
             </View>
+
+            {/* Schlaf-Timer */}
+            <SleepTimer hours={alarm.hours} minutes={alarm.minutes} />
 
             {/* Wochentage */}
             <View style={styles.card}>

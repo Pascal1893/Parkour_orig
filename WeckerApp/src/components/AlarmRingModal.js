@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -12,7 +12,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import GlassButton from './GlassButton';
+import WakeChallenge from './WakeChallenge';
 import { formatTime } from '../utils/notifications';
+import { recordDismissal } from '../utils/stats';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -21,6 +23,9 @@ const WAVE_COUNT = 4; // Anzahl der Puls-Wellen
 // Vollbild-Modal das erscheint wenn der Wecker klingelt (App im Vordergrund)
 // Zeigt pulsierende Wellen-Animation und Snooze/Dismiss-Buttons
 export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) {
+  // Zeigt die Wach-Challenge anstatt direkt zu dismissen
+  const [showChallenge, setShowChallenge] = useState(false);
+
   // Animations-Werte für jede einzelne Puls-Welle
   const waveAnims = useRef(
     Array.from({ length: WAVE_COUNT }, () => new Animated.Value(0))
@@ -133,12 +138,21 @@ export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) 
   function handleSnooze() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     stopSound();
+    setShowChallenge(false);
+    recordDismissal(false); // Snooze = nicht pünktlich
     onSnooze();
   }
 
-  function handleDismiss() {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  // Erst Challenge zeigen, dann wirklich dismisssen
+  function handleDismissPress() {
+    setShowChallenge(true);
+  }
+
+  // Challenge erfolgreich gelöst → wirklich dismisssen
+  function handleChallengeSolved() {
     stopSound();
+    setShowChallenge(false);
+    recordDismissal(true); // Pünktlich und ohne Snooze
     onDismiss();
   }
 
@@ -196,7 +210,10 @@ export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) 
           </Text>
         </View>
 
-        {/* Action Buttons */}
+        {/* Wach-Challenge oder normale Buttons */}
+        {showChallenge ? (
+          <WakeChallenge onSolved={handleChallengeSolved} />
+        ) : (
         <View style={styles.buttons}>
           <GlassButton
             title={`Snooze (${alarm.snoozeMinutes} Min)`}
@@ -211,10 +228,11 @@ export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) 
             title="Ausschalten"
             icon="✓"
             variant="primary"
-            onPress={handleDismiss}
+            onPress={handleDismissPress}
             size="lg"
           />
         </View>
+        )}
       </LinearGradient>
     </Modal>
   );

@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { setupNotifications } from './src/utils/notifications';
 import AlarmListScreen from './src/screens/AlarmListScreen';
 import AddAlarmScreen from './src/screens/AddAlarmScreen';
+import StatsScreen from './src/screens/StatsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { COLORS } from './src/constants/theme';
 
@@ -58,6 +59,7 @@ export default function App() {
                 const icons = {
                   Wecker: '⏰',
                   Hinzufügen: '＋',
+                  Statistiken: '📊',
                   Einstellungen: '⚙️',
                 };
                 return (
@@ -74,11 +76,9 @@ export default function App() {
             <Tab.Screen
               name="Hinzufügen"
               component={AddAlarmScreen}
-              // Direkt den AddAlarm-Screen als Tab öffnen
               listeners={({ navigation }) => ({
                 tabPress: (e) => {
                   e.preventDefault();
-                  // Über den AlarmStack navigieren damit der Back-Button funktioniert
                   navigation.navigate('Wecker', {
                     screen: 'AddAlarm',
                     params: { alarm: null },
@@ -86,6 +86,7 @@ export default function App() {
                 },
               })}
             />
+            <Tab.Screen name="Statistiken" component={StatsScreen} />
             <Tab.Screen name="Einstellungen" component={SettingsScreen} />
           </Tab.Navigator>
         </NavigationContainer>
