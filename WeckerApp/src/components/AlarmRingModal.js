@@ -106,13 +106,23 @@ export default function AlarmRingModal({ visible, alarm, onSnooze, onDismiss }) 
         playThroughEarpieceAndroid: false,
       });
 
-      // Nur bei eigenem Sound über expo-av abspielen
-      // Vorinstallierte Sounds werden über die Notification abgespielt
+      let soundSource = null;
       if (alarm?.sound?.type === 'custom' && alarm?.sound?.uri) {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: alarm.sound.uri },
-          { isLooping: true, volume: 1.0 }
-        );
+        soundSource = { uri: alarm.sound.uri };
+      } else {
+        // Standard-Alarm-Sound (von generate-sound.js erstellt)
+        try {
+          soundSource = require('../../assets/sounds/goal.wav');
+        } catch (e) {
+          // Datei noch nicht generiert — kein Sound
+        }
+      }
+
+      if (soundSource) {
+        const { sound } = await Audio.Sound.createAsync(soundSource, {
+          isLooping: true,
+          volume: 1.0,
+        });
         soundRef.current = sound;
         await sound.playAsync();
       }
