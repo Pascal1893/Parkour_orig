@@ -1,0 +1,13 @@
+ANLEITUNG: Tor-Sound hinzufügen
+================================
+
+1. Suche eine "goal.mp3" Datei (z.B. von freesound.org oder eigene Aufnahme)
+2. Benenne die Datei um zu: goal.mp3
+3. Lege sie in diesen Ordner: assets/sounds/goal.mp3
+4. Starte die App neu mit: npx expo start
+
+Fertig! Der Tor-Sound erscheint dann automatisch als Option.
+
+Tipp: Gute freie Soundquellen:
+- freesound.org (kostenlos, viele Optionen)
+- zapsplat.com
