@@ -2182,6 +2182,7 @@ function tryGrapple() {
   const gdy = bestTarget.y - oy;
   const gdist = Math.hypot(gdx, gdy);
   const spd = 15;
+  const firedPlayer = p;
   p.grapple = {
     x: ox, y: oy,
     vx: (gdx / gdist) * spd,
@@ -2190,7 +2191,7 @@ function tryGrapple() {
     ax: bestTarget.x,
     ay: bestTarget.y,
   };
-  setTimeout(() => { if (game.player) game.player.grappleReady = true; }, 1700);
+  setTimeout(() => { if (game.player === firedPlayer) firedPlayer.grappleReady = true; }, 1700);
 }
 
 function physics(dt) {
@@ -2211,16 +2212,32 @@ function physics(dt) {
   const boostMul = (p.boosterUntil && p.boosterUntil > game.t) ? 1.48 : 1.0;
   p.vx = prm.speed * dash * boostMul;
 
-  // grapple — fire kunai and override velocity when hooked
+  // grapple — advance kunai first so the hook transition is immediate (no 1-frame delay)
+  if (p.grapple?.phase === "flying") {
+    p.grapple.x += p.grapple.vx * 60 * dt;
+    p.grapple.y += p.grapple.vy * 60 * dt;
+    p.grapple.vy += 5 * dt;
+    if (Math.hypot(p.grapple.ax - p.grapple.x, p.grapple.ay - p.grapple.y) < 22) {
+      p.grapple.phase = "hooked";
+    } else if (p.grapple.x > W + 120 || p.grapple.y < -80 || p.grapple.y > H + 80) {
+      p.grapple = null;
+      if (game.player) game.player.grappleReady = true;
+    }
+  }
+
+  // fire kunai if not already active
   tryGrapple();
+
   if (p.grapple?.phase === "hooked") {
     const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
     const gdx = p.grapple.ax - pcx, gdy = p.grapple.ay - pcy;
     const gdist = Math.hypot(gdx, gdy);
-    if (gdist < 28) {
+    // Lower threshold (was 28) so the anchor doesn't scroll past the player in 1–2 frames
+    if (gdist < 12) {
       p.grapple = null;
     } else {
-      const pullSpd = Math.min(16, gdist * 0.52 + 7);
+      // Reduced pullSpd (was min 16) — slower but lasts more frames, feels like a real pull
+      const pullSpd = Math.min(10, gdist * 0.35 + 5);
       p.vx = (gdx / gdist) * pullSpd;
       p.vy = (gdy / gdist) * pullSpd;
       p.onGround = false;
@@ -2324,19 +2341,6 @@ function physics(dt) {
     fp.vy += 22 * dt;
   });
   game.fireParticles = game.fireParticles.filter(fp => fp.life > 0);
-
-  // advance grapple kunai projectile
-  if (p.grapple?.phase === "flying") {
-    p.grapple.x += p.grapple.vx * 60 * dt;
-    p.grapple.y += p.grapple.vy * 60 * dt;
-    p.grapple.vy += 5 * dt;
-    if (Math.hypot(p.grapple.ax - p.grapple.x, p.grapple.ay - p.grapple.y) < 22) {
-      p.grapple.phase = "hooked";
-    } else if (p.grapple.x > W + 120 || p.grapple.y < -80 || p.grapple.y > H + 80) {
-      p.grapple = null;
-      if (game.player) game.player.grappleReady = true;
-    }
-  }
 
   // spawn fire trail particles for Blaze
   if (prm.grapple) {
