@@ -1220,12 +1220,14 @@ class ParkourHandler(SimpleHTTPRequestHandler):
             note = str(data.get("note") or "")[:200]
         except Exception:
             return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "bad_request"})
-        if gift_type not in ("coins", "gems", "box"):
+        if gift_type not in ("coins", "gems", "box", "character"):
             return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "bad_type"})
         if gift_type == "box" and not any(b["id"] == box_id for b in BOXES):
             return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "bad_box"})
         if gift_type in ("coins", "gems") and amount <= 0:
             return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "bad_amount"})
+        if gift_type == "character" and not character_by_id(amount):
+            return json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "error": "character_not_found"})
         now = int(time.time())
         conn = _db()
         try:
@@ -1339,6 +1341,10 @@ class ParkourHandler(SimpleHTTPRequestHandler):
                 conn.execute("UPDATE users SET coins = coins + ? WHERE id = ?", (amount, uid))
             elif gift_type == "gems":
                 conn.execute("UPDATE users SET gems = gems + ? WHERE id = ?", (amount, uid))
+            elif gift_type == "character":
+                char = character_by_id(amount)
+                if char:
+                    conn.execute("INSERT OR IGNORE INTO unlocks (user_id, character_id) VALUES (?,?)", (uid, amount))
             elif gift_type == "box":
                 box = next((b for b in BOXES if b["id"] == box_id), None)
                 if box:

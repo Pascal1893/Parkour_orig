@@ -3684,7 +3684,7 @@ function selectAdminUser(u) {
 }
 
 function clearAdminMsgs() {
-  ["#admin-pw-msg", "#admin-gift-currency-msg", "#admin-gift-box-msg", "#admin-global-msg"].forEach((id) => {
+  ["#admin-pw-msg", "#admin-gift-currency-msg", "#admin-gift-box-msg", "#admin-gift-char-msg", "#admin-global-msg"].forEach((id) => {
     const el = $(id);
     if (el) { el.textContent = ""; el.className = "admin-msg"; }
   });
@@ -3705,11 +3705,21 @@ function initAdminPanel() {
     boxSel.innerHTML = shop.boxes.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join("");
   }
 
+  // Populate character dropdown (skip Runner id=0, always free)
+  const charSel = $("#admin-gift-char-id");
+  if (charSel && characters?.length) {
+    charSel.innerHTML = characters
+      .filter((c) => c.id !== 0)
+      .map((c) => `<option value="${c.id}">${escapeHtml(c.name)} — ${escapeHtml(c.ability)}</option>`)
+      .join("");
+  }
+
   const btnBan = $("#btn-admin-ban");
   const btnUnban = $("#btn-admin-unban");
   const btnResetPw = $("#btn-admin-reset-pw");
   const btnGiftCurrency = $("#btn-admin-gift-currency");
   const btnGiftBox = $("#btn-admin-gift-box");
+  const btnGiftChar = $("#btn-admin-gift-char");
 
   if (btnBan) {
     btnBan.addEventListener("click", async () => {
@@ -3785,6 +3795,24 @@ function initAdminPanel() {
     });
   }
 
+  if (btnGiftChar) {
+    btnGiftChar.addEventListener("click", async () => {
+      if (!adminSelectedUserId) return;
+      const charId = parseInt($("#admin-gift-char-id")?.value || "0", 10);
+      const note = $("#admin-gift-char-note")?.value || "";
+      if (!charId) return adminMsg("#admin-gift-char-msg", "Kein Charakter gewählt.");
+      try {
+        await api("/api/admin/gift", { method: "POST", body: JSON.stringify({ user_id: adminSelectedUserId, type: "character", amount: charId, note }) });
+        const charName = characters.find((c) => c.id === charId)?.name || `#${charId}`;
+        adminMsg("#admin-gift-char-msg", `${charName} gesendet.`, true);
+        const noteEl = $("#admin-gift-char-note");
+        if (noteEl) noteEl.value = "";
+      } catch (e) {
+        adminMsg("#admin-gift-char-msg", `Fehler: ${e.message}`);
+      }
+    });
+  }
+
   const btnDeleteUser = $("#btn-admin-delete-user");
   if (btnDeleteUser) {
     btnDeleteUser.addEventListener("click", async () => {
@@ -3851,6 +3879,10 @@ async function renderShopGifts() {
         icon = "📦";
         const boxNames = { bronze_box: "Bronze Box", silber_box: "Silber Box", gold_box: "Gold Box" };
         titleText = boxNames[g.box_id] || g.box_id;
+      } else if (g.type === "character") {
+        icon = "🧑";
+        const ch = characters.find((c) => c.id === g.amount);
+        titleText = ch ? `${ch.name} (${ch.ability})` : `Charakter #${g.amount}`;
       }
       el.innerHTML = `
         <div class="gift-icon">${icon}</div>
@@ -3873,6 +3905,9 @@ async function renderShopGifts() {
             const dr = result.drop_result;
             const boxObj = shop?.boxes?.find((b) => b.id === dr.box_id) || { id: dr.box_id, name: dr.box_id };
             await animateBoxOpen({ drop_kind: dr.drop_kind, drop: dr.drop, rarity: dr.rarity }, boxObj);
+          } else if (result.gift_type === "character") {
+            renderCharacters();
+            el.innerHTML = `<div class="gift-icon">🧑</div><div class="gift-info"><div class="gift-title">Charakter freigeschaltet!</div></div>`;
           } else {
             el.innerHTML = `<div class="gift-icon">${icon}</div><div class="gift-info"><div class="gift-title">Abgeholt!</div></div>`;
           }
