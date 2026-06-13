@@ -3,7 +3,31 @@
     "allow": [
       "Bash(Get-ChildItem -Path \"C:\\\\ich\\\\Parkour\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\ich\\\\Parkour\" -Recurse -Filter \"06_LB2*\")",
+      "Bash(find /mnt/c/Users/pasca -name \"*CloudQuiz*\" 2>/dev/null | head -10)",
+      "PowerShell($files = Get-ChildItem \"C:\\\\Module\\\\M346\\\\LB2\"; foreach \\($f in $files\\) { Write-Output $f.Name })",
+      "Bash(python scripts/office/unpack.py \"C:\\\\Module\\\\M346\\\\LB2\\\\LB2_Pruefungszusammenfassung_v2.docx\" /tmp/pruefung_unpacked/)",
+      "Bash(pandoc \"C:\\\\Module\\\\M346\\\\LB2\\\\LB2_Pruefungszusammenfassung_v2.docx\" -t plain)",
+      "PowerShell(cd \"C:\\\\Module\\\\M346\\\\LB2\"; $zip = [System.IO.Compression.ZipFile]::OpenRead\\(\"LB2_Pruefungszusammenfassung_v2.docx\"\\); $entry = $zip.Entries | Where-Object { $_.FullName -eq \"word/document.xml\" }; $stream = $entry.Open\\(\\); $reader = New-Object System.IO.StreamReader\\($stream\\); $xml = $reader.ReadToEnd\\(\\); $reader.Close\\(\\); $zip.Dispose\\(\\); $xml -replace '<[^>]+>','' -replace '  +',' ' | Select-String -Pattern '\\\\S' | Select-Object -First 300 | ForEach-Object { $_.Line })",
+      "PowerShell(Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead\\(\"C:\\\\Module\\\\M346\\\\LB2\\\\LB2_Pruefungszusammenfassung_v2.docx\"\\); $entry = $zip.Entries | Where-Object { $_.FullName -eq \"word/document.xml\" }; $stream = $entry.Open\\(\\); $reader = New-Object System.IO.StreamReader\\($stream\\); $xml = $reader.ReadToEnd\\(\\); $reader.Close\\(\\); $zip.Dispose\\(\\); $text = $xml -replace '<[^>]+>','' -replace '&amp;','&' -replace '&lt;','<' -replace '&gt;','>' -replace '\\\\s+',' '; Write-Output $text)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(\\(Get-Content \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\public\\\\app.js\" | Measure-Object -Line\\).Lines; \\(Get-Content \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\server.py\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(python -m py_compile \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\ws_server.py\" \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\server.py\")",
+      "PowerShell(if \\($?\\) { \"OK\" })",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId = 21404\" | Select-Object ProcessId, CommandLine, @{N=\"Cwd\";E={$_.Path}} | Format-List; \\(Get-CimInstance Win32_Process -Filter \"ProcessId = 21404\"\\).GetOwner\\(\\).User)",
+      "PowerShell(Start-Process -FilePath \"python\" -ArgumentList \"server.py\" -WorkingDirectory \"C:\\\\ich\\\\Parkour\\\\Parkourapp\" -WindowStyle Hidden; Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest -Uri \"http://localhost:1893/\" -UseBasicParsing -TimeoutSec 5; $cache = $r.Headers[\"Cache-Control\"]; $hasVer = $r.Content.Contains\\(\"app.js?v=20260612b\"\\); \"Server laeuft - Cache-Control: $cache - Versionierte app.js: $hasVer\" } catch { \"Fehler: \" + $_.Exception.Message })",
+      "PowerShell($f = \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\public\\\\index.html\"; $c = [System.IO.File]::ReadAllText\\($f, [System.Text.Encoding]::UTF8\\); $c = $c.Replace\\(\"?v=20260612b\", \"?v=20260612c\"\\); [System.IO.File]::WriteAllText\\($f, $c, \\(New-Object System.Text.UTF8Encoding\\($false\\)\\)\\); \\(Select-String -Path $f -Pattern \"v=20260612c\"\\).Count.ToString\\(\\) + \" Stellen ersetzt\"; node --check \"C:\\\\ich\\\\Parkour\\\\Parkourapp\\\\public\\\\app.js\"; if \\($?\\) { \"JS OK\" })",
+      "PowerShell(foreach \\($p in 1893,1894\\) { $c = Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($c\\) { Stop-Process -Id $c.OwningProcess -Force -Confirm:$false -ErrorAction SilentlyContinue } }; Start-Sleep -Seconds 1; Start-Process -FilePath \"python\" -ArgumentList \"server.py\" -WorkingDirectory \"C:\\\\ich\\\\Parkour\\\\Parkourapp\" -WindowStyle Hidden; Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest -Uri \"http://localhost:1893/\" -UseBasicParsing -TimeoutSec 5; \"Server laeuft - v20260612f: \" + $r.Content.Contains\\(\"app.js?v=20260612f\"\\) } catch { \"Fehler: \" + $_.Exception.Message })",
+      "Bash(node --check public/app.js)",
+      "Bash(python -c \"import ast,sys; ast.parse\\(open\\('server.py',encoding='utf-8'\\).read\\(\\)\\); ast.parse\\(open\\('ws_server.py',encoding='utf-8'\\).read\\(\\)\\); print\\('python OK'\\)\")",
+      "Bash(PARKOUR_PORT=1893 python server.py)",
+      "Bash(pkill -f \"server.py\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 1893,1894 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Start-Sleep 1; \"freed\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "mcp__visualize__read_me"
     ]
   }
 }
