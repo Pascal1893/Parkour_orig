@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "CloudQuiz",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5678", "--directory", "C:\\Module\\M346\\LB2"],
+      "port": 5678
+    },
+    {
+      "name": "Parkour",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["C:\\ich\\Parkour\\Parkourapp\\server.py"],
+      "port": 1893
+    },
+    {
+      "name": "Parkour-Test",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "$env:PARKOUR_PORT='1895'; $env:PARKOUR_WS_PORT='1896'; python C:\\ich\\Parkour\\Parkourapp\\server.py"],
+      "port": 1895
+    },
+    {
+      "name": "Parkour-Test2",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "$env:PARKOUR_PORT='1897'; $env:PARKOUR_WS_PORT='1898'; python C:\\ich\\Parkour\\Parkourapp\\server.py"],
+      "port": 1897
+    }
+  ]
+}
