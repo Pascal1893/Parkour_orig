@@ -27,7 +27,12 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "mcp__visualize__read_me"
+      "mcp__visualize__read_me",
+      "Bash(cd /c/ich/Parkour/Parkourapp/parkour-redesign && find . -type f -not -path './node_modules/*' -not -path './.git/*' | head -100 && echo \"---TOTAL---\" && find . -type f -not -path './node_modules/*' -not -path './.git/*' | wc -l)",
+      "Bash(git -C . ls-files)",
+      "Bash(grep -nE \"^\\\\.layout|^\\\\.game-card|^\\\\.side-card|^\\\\.card[ {,]|^\\\\.card\\\\b|^\\\\.diff-bar|^\\\\.diff-btn|^\\\\.card-foot|^\\\\.card-head\" public/styles.css)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('server.py',encoding='utf-8'\\).read\\(\\)\\); print\\('server.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('server.py',encoding='utf-8'\\).read\\(\\)\\); ast.parse\\(open\\('ws_server.py',encoding='utf-8'\\).read\\(\\)\\); print\\('python OK'\\)\")"
     ]
   }
 }
